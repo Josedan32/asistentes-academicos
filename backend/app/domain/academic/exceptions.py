@@ -2,25 +2,25 @@ class AcademicError(Exception):
     """Base class for academic domain rule violations."""
 
 
-class InvalidSemester(AcademicError):
+class InvalidSemesterError(AcademicError):
     """Semester is outside the range the program defines."""
 
 
-class InvalidCredits(AcademicError):
+class InvalidCreditsError(AcademicError):
     """Credits must be a positive integer."""
 
 
-class DuplicateCourseInCurriculum(AcademicError):
+class DuplicateCourseInCurriculumError(AcademicError):
     """The course is already assigned in this program's curriculum."""
 
 
-class CourseNotInCurriculum(AcademicError):
+class CourseNotInCurriculumError(AcademicError):
     """The course is not assigned in this program's curriculum."""
 
 
-class PrerequisiteNotInCurriculum(AcademicError):
+class PrerequisiteNotInCurriculumError(AcademicError):
     """A prerequisite must itself be part of the same program's curriculum."""
 
 
-class PrerequisiteNotEarlier(AcademicError):
+class PrerequisiteNotEarlierError(AcademicError):
     """A prerequisite must sit in a strictly earlier semester."""

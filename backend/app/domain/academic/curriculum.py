@@ -2,12 +2,12 @@ from dataclasses import dataclass, field, replace
 
 from app.domain.academic.entities import CurriculumEntry, Program
 from app.domain.academic.exceptions import (
-    CourseNotInCurriculum,
-    DuplicateCourseInCurriculum,
-    InvalidCredits,
-    InvalidSemester,
-    PrerequisiteNotEarlier,
-    PrerequisiteNotInCurriculum,
+    CourseNotInCurriculumError,
+    DuplicateCourseInCurriculumError,
+    InvalidCreditsError,
+    InvalidSemesterError,
+    PrerequisiteNotEarlierError,
+    PrerequisiteNotInCurriculumError,
 )
 
 
@@ -34,9 +34,9 @@ class Curriculum:
     ) -> CurriculumEntry:
         self._require_valid_semester(semester)
         if credits < 1:
-            raise InvalidCredits(f"credits must be positive, got {credits}")
+            raise InvalidCreditsError(f"credits must be positive, got {credits}")
         if self.semester_of(course_id) is not None:
-            raise DuplicateCourseInCurriculum(
+            raise DuplicateCourseInCurriculumError(
                 f"course {course_id} is already in program {self.program.id}"
             )
         for prerequisite_id in prerequisite_course_ids:
@@ -64,7 +64,7 @@ class Curriculum:
             if other.course_id == course_id:
                 continue
             if course_id in other.prerequisite_course_ids and other.semester <= new_semester:
-                raise PrerequisiteNotEarlier(
+                raise PrerequisiteNotEarlierError(
                     f"course {course_id} is a prerequisite of {other.course_id} "
                     f"in semester {other.semester}"
                 )
@@ -82,22 +82,22 @@ class Curriculum:
         for index, entry in enumerate(self.entries):
             if entry.course_id == course_id:
                 return index
-        raise CourseNotInCurriculum(f"course {course_id} is not in this curriculum")
+        raise CourseNotInCurriculumError(f"course {course_id} is not in this curriculum")
 
     def _require_valid_semester(self, semester: int) -> None:
         if not 1 <= semester <= self.program.semester_count:
-            raise InvalidSemester(
+            raise InvalidSemesterError(
                 f"semester must be between 1 and {self.program.semester_count}, got {semester}"
             )
 
     def _require_earlier(self, prerequisite_course_id: int, semester: int) -> None:
         prerequisite_semester = self.semester_of(prerequisite_course_id)
         if prerequisite_semester is None:
-            raise PrerequisiteNotInCurriculum(
+            raise PrerequisiteNotInCurriculumError(
                 f"prerequisite {prerequisite_course_id} is not in this curriculum"
             )
         if prerequisite_semester >= semester:
-            raise PrerequisiteNotEarlier(
+            raise PrerequisiteNotEarlierError(
                 f"prerequisite {prerequisite_course_id} sits in semester "
                 f"{prerequisite_semester}, not earlier than {semester}"
             )
