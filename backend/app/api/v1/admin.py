@@ -40,7 +40,17 @@ ReaderDep = Annotated[SqlAlchemyAcademicReader, Depends(get_academic_reader)]
 @router.get("/programs", response_model=list[ProgramOut])
 async def list_programs(reader: ReaderDep) -> list[ProgramOut]:
     rows = await ListPrograms(reader).execute()
-    return [ProgramOut(**row.__dict__) for row in rows]
+    return [
+        ProgramOut(
+            id=row.id,
+            code=row.code,
+            name=row.name,
+            semester_count=row.semester_count,
+            is_active=row.is_active,
+            course_count=row.course_count,
+        )
+        for row in rows
+    ]
 
 
 @router.post("/programs", status_code=status.HTTP_201_CREATED, response_model=ProgramOut)

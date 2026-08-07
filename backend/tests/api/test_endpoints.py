@@ -210,6 +210,34 @@ async def test_login_with_wrong_password_returns_401(client: AsyncClient) -> Non
     assert unknown.json() == response.json()
 
 
+async def test_public_programs_projection_carries_course_count(client: AsyncClient) -> None:
+    """A field rename in ProgramSummary must not silently degrade to course_count=0."""
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    course = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD1", "name": "Base de Datos 1", "area": "Datos", "default_credits": 3},
+        headers=headers,
+    )
+    await client.post(
+        f"/api/v1/admin/programs/{program.json()['id']}/curriculum",
+        json={"course_id": course.json()["id"], "semester": 3, "credits": 3},
+        headers=headers,
+    )
+
+    response = await client.get("/api/v1/programs")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["course_count"] == 1
+    assert body[0]["code"] == "ISW"
+
+
 async def test_student_token_cannot_reach_admin_routes(client: AsyncClient) -> None:
     """A valid token is not authorisation. Role gating is a separate check."""
     response = await client.post(
