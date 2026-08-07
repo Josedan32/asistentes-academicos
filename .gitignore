@@ -1,5 +1,6 @@
 # Superpowers working documents — excluded per repository owner's rule
 docs/superpowers/
+.superpowers/
 
 # Python
 __pycache__/
