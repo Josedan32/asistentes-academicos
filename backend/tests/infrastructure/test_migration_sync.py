@@ -4,6 +4,8 @@ Every test builds its schema from Base.metadata.create_all, so a model column ad
 without a revision is invisible to the entire suite — and fatal in production.
 """
 
+from pathlib import Path
+
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
@@ -12,6 +14,8 @@ from sqlalchemy import create_engine
 from alembic import command
 from app.infrastructure.config import get_settings
 from app.infrastructure.persistence.models import Base
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_models_match_the_migration_head(tmp_path, monkeypatch) -> None:
@@ -23,8 +27,8 @@ def test_models_match_the_migration_head(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("SYNC_DATABASE_URL", db_url)
     get_settings.cache_clear()
     try:
-        config = Config("backend/alembic.ini")
-        config.set_main_option("script_location", "backend/alembic")
+        config = Config(str(BACKEND_ROOT / "alembic.ini"))
+        config.set_main_option("script_location", str(BACKEND_ROOT / "alembic"))
         command.upgrade(config, "head")
     finally:
         get_settings.cache_clear()
