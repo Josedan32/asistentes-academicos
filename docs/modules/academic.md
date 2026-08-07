@@ -15,6 +15,12 @@ Owns programs, courses, curricula and prerequisites. Every agent tool reads from
 ## Key rules
 - A course belongs to many programs. `CurriculumEntry` is the association.
 - Prerequisites hang off a `CurriculumEntry`, so they can differ per program.
+- The prerequisite's *owning* side (`curriculum_entry_id`) is enforced by the schema; its
+  *required* side (`required_course_id`) is not. Nothing in the database prevents a
+  prerequisite naming a course outside that program's curriculum — the `Curriculum`
+  aggregate does, via `PrerequisiteNotInCurriculumError`. Every write goes through the
+  aggregate, so the invariant holds in practice, but it is a domain guarantee rather than
+  a structural one.
 - `CurriculumEntry.credits` is authoritative; `Course.default_credits` only pre-fills forms.
 - `move()` re-validates both directions: a course may not land on or before its own
   prerequisites, nor on or after anything that depends on it.
