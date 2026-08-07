@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     sync_database_url: str = "sqlite:///./academic.db"
     redis_url: str = "redis://localhost:6379/0"
 
-    jwt_secret: str = "change-me"
+    jwt_secret: str = "dev-only-insecure-secret-replace-me-32b"
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 60
 

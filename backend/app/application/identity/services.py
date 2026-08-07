@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from app.application.identity.ports import PasswordHasher, TokenIssuer, UserRepository
 from app.domain.identity.entities import Role, StudentProfile, User
-from app.domain.identity.exceptions import EmailAlreadyRegistered, InvalidCredentials
+from app.domain.identity.exceptions import EmailAlreadyRegisteredError, InvalidCredentialsError
 
 
 @dataclass
@@ -23,7 +23,7 @@ class RegisterStudent:
     ) -> User:
         normalized_email = email.strip().lower()
         if await self.repository.find_by_email(normalized_email) is not None:
-            raise EmailAlreadyRegistered(normalized_email)
+            raise EmailAlreadyRegisteredError(normalized_email)
 
         user = User(
             email=normalized_email,
@@ -50,5 +50,5 @@ class Authenticate:
     async def execute(self, *, email: str, password: str) -> str:
         user = await self.repository.find_by_email(email.strip().lower())
         if user is None or not self.hasher.verify(password, user.password_hash):
-            raise InvalidCredentials()
+            raise InvalidCredentialsError()
         return self.issuer.issue(subject=str(user.id), role=str(user.role))

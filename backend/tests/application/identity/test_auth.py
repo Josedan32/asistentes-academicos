@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.identity.services import Authenticate, RegisterStudent
 from app.domain.identity.entities import Role
-from app.domain.identity.exceptions import EmailAlreadyRegistered, InvalidCredentials
+from app.domain.identity.exceptions import EmailAlreadyRegisteredError, InvalidCredentialsError
 from app.infrastructure.persistence.models import ProgramModel
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.infrastructure.security.hasher import Argon2Hasher
@@ -19,7 +19,11 @@ async def context(
     return (
         SqlAlchemyUserRepository(session),
         Argon2Hasher(),
-        JwtTokenIssuer(secret="test-secret", algorithm="HS256", minutes=60),
+        JwtTokenIssuer(
+            secret="test-secret-that-is-long-enough-for-hs256",
+            algorithm="HS256",
+            minutes=60,
+        ),
     )
 
 
@@ -51,7 +55,7 @@ async def test_rejects_duplicate_email(context) -> None:
         program_id=1,
         current_semester=4,
     )
-    with pytest.raises(EmailAlreadyRegistered):
+    with pytest.raises(EmailAlreadyRegisteredError):
         await register.execute(
             email="jose@pascualbravo.edu.co",
             password="another-password",
@@ -93,7 +97,7 @@ async def test_rejects_wrong_password(context) -> None:
         program_id=1,
         current_semester=4,
     )
-    with pytest.raises(InvalidCredentials):
+    with pytest.raises(InvalidCredentialsError):
         await Authenticate(repository, hasher, issuer).execute(
             email="jose@pascualbravo.edu.co", password="wrong"
         )
@@ -101,7 +105,7 @@ async def test_rejects_wrong_password(context) -> None:
 
 async def test_rejects_unknown_email(context) -> None:
     repository, hasher, issuer = context
-    with pytest.raises(InvalidCredentials):
+    with pytest.raises(InvalidCredentialsError):
         await Authenticate(repository, hasher, issuer).execute(
             email="nobody@pascualbravo.edu.co", password="whatever"
         )
