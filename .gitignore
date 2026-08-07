@@ -2,6 +2,9 @@
 docs/superpowers/
 .superpowers/
 
+# Git worktrees for isolated feature work
+.worktrees/
+
 # Python
 __pycache__/
 *.py[cod]
