@@ -55,3 +55,16 @@ class SqlAlchemyUserRepository:
 
     async def program_exists(self, program_id: int) -> bool:
         return await self._session.get(ProgramModel, program_id) is not None
+
+    async def find_profile_by_user_id(self, user_id: int) -> StudentProfile | None:
+        model = await self._session.get(StudentProfileModel, user_id)
+        if model is None:
+            return None
+        return StudentProfile(
+            user_id=model.user_id,
+            first_name=model.first_name,
+            last_name=model.last_name,
+            document=model.document,
+            program_id=model.program_id,
+            current_semester=model.current_semester,
+        )
