@@ -25,6 +25,9 @@ class RegisterStudent:
         if await self.repository.find_by_email(normalized_email) is not None:
             raise EmailAlreadyRegisteredError(normalized_email)
 
+        if not await self.repository.program_exists(program_id):
+            raise LookupError(f"program {program_id} does not exist")
+
         user = User(
             email=normalized_email,
             password_hash=self.hasher.hash(password),

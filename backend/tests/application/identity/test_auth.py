@@ -66,6 +66,20 @@ async def test_rejects_duplicate_email(context) -> None:
         )
 
 
+async def test_rejects_registration_for_an_unknown_program(context) -> None:
+    repository, hasher, _ = context
+    with pytest.raises(LookupError):
+        await RegisterStudent(repository, hasher).execute(
+            email="jose@pascualbravo.edu.co",
+            password="a-strong-password",
+            first_name="Jose",
+            last_name="Hernandez",
+            document="1000123456",
+            program_id=9999,
+            current_semester=4,
+        )
+
+
 async def test_authenticates_and_issues_a_token(context) -> None:
     repository, hasher, issuer = context
     await RegisterStudent(repository, hasher).execute(

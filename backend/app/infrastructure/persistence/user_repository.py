@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.identity.entities import Role, StudentProfile, User
-from app.infrastructure.persistence.models import StudentProfileModel, UserModel
+from app.infrastructure.persistence.models import ProgramModel, StudentProfileModel, UserModel
 
 
 class SqlAlchemyUserRepository:
@@ -52,3 +52,6 @@ class SqlAlchemyUserRepository:
             password_hash=model.password_hash,
             role=Role(model.role),
         )
+
+    async def program_exists(self, program_id: int) -> bool:
+        return await self._session.get(ProgramModel, program_id) is not None

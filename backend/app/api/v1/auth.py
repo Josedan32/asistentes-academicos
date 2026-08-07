@@ -34,6 +34,10 @@ async def register(payload: RegisterIn, repository: UserRepoDep, hasher: HasherD
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
         ) from error
+    except LookupError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(error)
+        ) from error
 
     return TokenOut(
         access_token=issuer.issue(subject=str(user.id), role=str(user.role)),
