@@ -54,9 +54,13 @@ async def reader(session: AsyncSession) -> SqlAlchemyAcademicReader:
     session.add_all([first, second, shared])
     await session.commit()
 
-    session.add(
-        PrerequisiteModel(curriculum_entry_id=second.id, required_course_id=bd1.id)
-    )
+    session.add_all([
+        PrerequisiteModel(curriculum_entry_id=second.id, required_course_id=bd1.id),
+        # BD1 is also a prerequisite of BD2 inside electronics' own curriculum entry
+        # (`shared`), but BD1 itself has no entry there — this is what R4's
+        # semester=None test exercises.
+        PrerequisiteModel(curriculum_entry_id=shared.id, required_course_id=bd1.id),
+    ])
     await session.commit()
 
     return SqlAlchemyAcademicReader(session)
@@ -135,3 +139,21 @@ async def test_course_detail_without_a_program_reports_no_credits(
 async def test_finds_a_course_across_programs(reader: SqlAlchemyAcademicReader) -> None:
     placements = await FindCourseInPrograms(reader).execute(course="Base de Datos 2")
     assert {(p.program_code, p.semester) for p in placements} == {("ISW", 4), ("IEL", 5)}
+
+
+async def test_prerequisite_outside_the_requiring_curriculum_reports_semester_none(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    """BD1 is a prerequisite of BD2 in electronics' curriculum, but BD1 itself is not
+    assigned there — the outer join must surface that as semester=None, not crash or
+    silently coerce to 0."""
+    result = await GetPrerequisites(reader).execute(program_id=2, course="Base de Datos 2")
+    assert result.resolved_course_name == "Base de Datos 2"
+    assert [p.semester for p in result.prerequisites] == [None]
+
+
+async def test_prerequisite_inside_the_curriculum_reports_its_semester(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    result = await GetPrerequisites(reader).execute(program_id=1, course="Base de Datos 2")
+    assert [p.semester for p in result.prerequisites] == [3]
