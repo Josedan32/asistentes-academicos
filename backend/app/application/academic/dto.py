@@ -26,7 +26,7 @@ class PrerequisiteView:
     course_id: int
     course_code: str
     course_name: str
-    semester: int
+    semester: int | None
 
 
 @dataclass(frozen=True)

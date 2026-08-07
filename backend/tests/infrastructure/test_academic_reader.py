@@ -3,7 +3,7 @@ from dataclasses import fields
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.application.academic.dto import PrerequisiteView
+from app.application.academic.dto import PrerequisiteResult, PrerequisiteView
 from app.application.academic.queries import (
     FindCourseInPrograms,
     GetCourseDetail,
@@ -90,6 +90,11 @@ def test_prerequisite_view_exposes_no_student_data() -> None:
         "course_code",
         "course_name",
         "semester",
+    }
+    assert {field.name for field in fields(PrerequisiteResult)} == {
+        "resolved_course_name",
+        "prerequisites",
+        "candidates",
     }
 
 

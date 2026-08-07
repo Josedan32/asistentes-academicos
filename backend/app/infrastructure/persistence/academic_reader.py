@@ -101,7 +101,7 @@ class SqlAlchemyAcademicReader:
                 course_id=course.id,
                 course_code=course.code,
                 course_name=course.name,
-                semester=semester or 0,
+                semester=semester,
             )
             for course, semester in rows
         ]
