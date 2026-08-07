@@ -104,7 +104,27 @@ async def test_returns_candidates_when_course_name_is_ambiguous(
 async def test_gets_course_detail(reader: SqlAlchemyAcademicReader) -> None:
     detail = await GetCourseDetail(reader).execute(course="BD2")
     assert detail is not None
+    assert detail.code == "BD2"
+    assert detail.name == "Base de Datos 2"
     assert detail.area == "Datos"
+
+
+async def test_course_detail_reports_curriculum_credits_not_defaults(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    """BD2 declares 4 default credits but counts for 3 in the electronics curriculum."""
+    detail = await GetCourseDetail(reader).execute(course="BD2", program_id=2)
+    assert detail is not None
+    assert detail.credits == 3
+
+
+async def test_course_detail_without_a_program_reports_no_credits(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    """Credits are a property of the curriculum entry, never of the course alone."""
+    detail = await GetCourseDetail(reader).execute(course="BD2")
+    assert detail is not None
+    assert detail.credits is None
 
 
 async def test_finds_a_course_across_programs(reader: SqlAlchemyAcademicReader) -> None:

@@ -106,17 +106,31 @@ class SqlAlchemyAcademicReader:
             for course, semester in rows
         ]
 
-    async def course_detail(self, course_id: int) -> CourseDetail | None:
+    async def course_detail(
+        self, course_id: int, program_id: int | None = None
+    ) -> CourseDetail | None:
         course = await self._session.get(CourseModel, course_id)
         if course is None:
             return None
+
+        credits: int | None = None
+        if program_id is not None:
+            credits = (
+                await self._session.execute(
+                    select(CurriculumEntryModel.credits).where(
+                        CurriculumEntryModel.course_id == course_id,
+                        CurriculumEntryModel.program_id == program_id,
+                    )
+                )
+            ).scalar_one_or_none()
+
         return CourseDetail(
             id=course.id,
             code=course.code,
             name=course.name,
             area=course.area,
             description=course.description,
-            default_credits=course.default_credits,
+            credits=credits,
         )
 
     async def placements_of(self, course_id: int) -> list[ProgramPlacement]:

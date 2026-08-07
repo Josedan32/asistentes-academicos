@@ -45,7 +45,7 @@ class CourseDetail:
     name: str
     area: str
     description: str
-    default_credits: int
+    credits: int | None
 
 
 @dataclass(frozen=True)

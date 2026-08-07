@@ -51,11 +51,13 @@ class GetPrerequisites:
 class GetCourseDetail:
     reader: AcademicReader
 
-    async def execute(self, *, course: str) -> CourseDetail | None:
+    async def execute(
+        self, *, course: str, program_id: int | None = None
+    ) -> CourseDetail | None:
         resolution = resolve_course(course, await self.reader.course_candidates())
         if not isinstance(resolution, Resolved):
             return None
-        return await self.reader.course_detail(resolution.course_id)
+        return await self.reader.course_detail(resolution.course_id, program_id)
 
 
 @dataclass
