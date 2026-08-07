@@ -1,0 +1,25 @@
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    database_url: str = "sqlite+aiosqlite:///./academic.db"
+    sync_database_url: str = "sqlite:///./academic.db"
+    redis_url: str = "redis://localhost:6379/0"
+
+    jwt_secret: str = "change-me"
+    jwt_algorithm: str = "HS256"
+    access_token_minutes: int = 60
+
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5:3b"
+    ollama_num_ctx: int = 8192
+    ollama_keep_alive: str = "10m"
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
