@@ -1,26 +1,14 @@
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.models import (
-    Base,
     CourseModel,
     CurriculumEntryModel,
     PrerequisiteModel,
     ProgramModel,
 )
-
-
-@pytest.fixture
-async def session() -> AsyncSession:
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as active_session:
-        yield active_session
-    await engine.dispose()
 
 
 async def test_persists_program_and_course(session: AsyncSession) -> None:
@@ -74,3 +62,10 @@ async def test_prerequisite_links_to_curriculum_entry(session: AsyncSession) -> 
 
     stored = (await session.execute(select(PrerequisiteModel))).scalars().all()
     assert stored[0].required_course_id == first.id
+
+
+async def test_foreign_keys_are_enforced(session: AsyncSession) -> None:
+    """Without PRAGMA foreign_keys=ON the ondelete clauses on every model are inert."""
+    session.add(CurriculumEntryModel(program_id=999, course_id=999, semester=1, credits=3))
+    with pytest.raises(IntegrityError):
+        await session.commit()
