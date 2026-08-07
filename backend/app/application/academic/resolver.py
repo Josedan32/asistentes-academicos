@@ -13,6 +13,11 @@ STRONG_MATCH = 0.86
 WEAK_MATCH = 0.62
 AMBIGUITY_MARGIN = 0.06
 
+# A query shorter than this can appear inside almost any course name (a single digit
+# or a two-letter word like "de"), so containment alone is not meaningful evidence
+# below this length. Below the guard we fall through to similarity scoring instead.
+MIN_CONTAINMENT_LENGTH = 4
+
 
 def normalize(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value.strip().lower())
@@ -58,6 +63,17 @@ def resolve_course(query: str, candidates: list[CourseMatch]) -> Resolution:
     if len(exact) == 1:
         return Resolved(course_id=exact[0].id, name=exact[0].name)
 
+    contained = [
+        candidate
+        for candidate in candidates
+        if len(normalized_query) >= MIN_CONTAINMENT_LENGTH
+        and normalized_query in normalize(candidate.name)
+    ]
+    if len(contained) == 1:
+        return Resolved(course_id=contained[0].id, name=contained[0].name)
+    if len(contained) > 1:
+        return Ambiguous(candidates=contained)
+
     scored = sorted(
         (
             (SequenceMatcher(None, normalized_query, normalize(c.name)).ratio(), c)
@@ -78,4 +94,5 @@ def resolve_course(query: str, candidates: list[CourseMatch]) -> Resolution:
     if best_score >= STRONG_MATCH:
         return Resolved(course_id=best.id, name=best.name)
 
-    return Ambiguous(candidates=[candidate for _, candidate in scored[:3]])
+    plausible = [candidate for score, candidate in scored if score >= WEAK_MATCH]
+    return Ambiguous(candidates=plausible[:3])

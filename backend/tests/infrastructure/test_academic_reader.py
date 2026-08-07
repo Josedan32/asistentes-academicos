@@ -1,6 +1,9 @@
+from dataclasses import fields
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.academic.dto import PrerequisiteView
 from app.application.academic.queries import (
     FindCourseInPrograms,
     GetCourseDetail,
@@ -80,13 +83,14 @@ async def test_gets_prerequisites_of_a_course(reader: SqlAlchemyAcademicReader) 
     assert [item.course_code for item in result.prerequisites] == ["BD1"]
 
 
-async def test_prerequisites_never_expose_student_status(
-    reader: SqlAlchemyAcademicReader,
-) -> None:
-    result = await GetPrerequisites(reader).execute(program_id=1, course="Base de Datos 2")
-    serialized = str(result)
-    assert "grade" not in serialized
-    assert "passed" not in serialized
+def test_prerequisite_view_exposes_no_student_data() -> None:
+    """Spec 7.4: prerequisites carry no student status or grades. Pin the shape."""
+    assert {field.name for field in fields(PrerequisiteView)} == {
+        "course_id",
+        "course_code",
+        "course_name",
+        "semester",
+    }
 
 
 async def test_returns_candidates_when_course_name_is_ambiguous(

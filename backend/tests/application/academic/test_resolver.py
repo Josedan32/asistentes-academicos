@@ -47,3 +47,28 @@ def test_returns_candidates_when_query_is_ambiguous() -> None:
 def test_returns_not_found_for_unrelated_query() -> None:
     result = resolve_course("Termodinamica Aplicada", CANDIDATES)
     assert isinstance(result, NotFound)
+
+
+def test_ambiguous_candidates_all_clear_the_weak_threshold() -> None:
+    """The fallback branch must not offer courses the resolver itself scored as irrelevant."""
+    result = resolve_course("Programacion 2", CANDIDATES)
+    assert isinstance(result, Resolved)
+    assert result.course_id == 4
+
+
+def test_resolves_a_natural_abbreviation() -> None:
+    result = resolve_course("Herramientas", CANDIDATES)
+    assert isinstance(result, Resolved)
+    assert result.course_id == 4
+
+
+def test_containment_needs_a_meaningful_length() -> None:
+    """A one or two character query must not match everything it appears inside."""
+    assert isinstance(resolve_course("1", CANDIDATES), NotFound)
+    assert isinstance(resolve_course("de", CANDIDATES), NotFound)
+
+
+def test_containment_returns_candidates_when_several_courses_match() -> None:
+    result = resolve_course("Base de Datos", CANDIDATES)
+    assert isinstance(result, Ambiguous)
+    assert {candidate.id for candidate in result.candidates} == {1, 2}
