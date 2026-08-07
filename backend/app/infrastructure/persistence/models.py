@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -87,3 +88,57 @@ class StudentProfileModel(Base):
     document: Mapped[str] = mapped_column(String(32))
     program_id: Mapped[int] = mapped_column(ForeignKey("programs.id", ondelete="RESTRICT"))
     current_semester: Mapped[int] = mapped_column(Integer)
+
+
+class ConversationModel(Base):
+    __tablename__ = "conversations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # SET NULL, not RESTRICT like courses' other FKs: a course being retired must not
+    # block deleting it just because an old conversation once referenced it.
+    course_id: Mapped[int | None] = mapped_column(
+        ForeignKey("courses.id", ondelete="SET NULL"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class MessageModel(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(20))
+    content: Mapped[str] = mapped_column(Text)
+    prompt_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ToolCallModel(Base):
+    __tablename__ = "tool_calls"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(80))
+    arguments: Mapped[dict] = mapped_column(JSON)
+    result: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    duration_ms: Mapped[int] = mapped_column(Integer)
+    row_count: Mapped[int] = mapped_column(Integer)
+    sequence: Mapped[int] = mapped_column(Integer)
+
+
+class MessageFeedbackModel(Base):
+    __tablename__ = "message_feedback"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), index=True
+    )
+    value: Mapped[str] = mapped_column(String(4))
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
