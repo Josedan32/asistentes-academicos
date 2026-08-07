@@ -1,5 +1,13 @@
 from typing import Protocol
 
+from app.application.academic.dto import (
+    CourseDetail,
+    CourseSummary,
+    PrerequisiteView,
+    ProgramPlacement,
+    ProgramSummary,
+)
+from app.application.academic.resolver import CourseMatch
 from app.domain.academic.curriculum import Curriculum
 from app.domain.academic.entities import Course, Program
 
@@ -16,3 +24,23 @@ class AcademicRepository(Protocol):
     async def save_curriculum(self, curriculum: Curriculum) -> None: ...
 
     async def course_exists(self, course_id: int) -> bool: ...
+
+
+class AcademicReader(Protocol):
+    """Read-side port. Returns flat DTOs, never domain aggregates."""
+
+    async def list_programs(self) -> list[ProgramSummary]: ...
+
+    async def list_semester_courses(
+        self, program_id: int, semester: int
+    ) -> list[CourseSummary]: ...
+
+    async def course_candidates(self) -> list[CourseMatch]: ...
+
+    async def prerequisites_of(
+        self, program_id: int, course_id: int
+    ) -> list[PrerequisiteView]: ...
+
+    async def course_detail(self, course_id: int) -> CourseDetail | None: ...
+
+    async def placements_of(self, course_id: int) -> list[ProgramPlacement]: ...
