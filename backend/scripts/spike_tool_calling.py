@@ -40,7 +40,10 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "program_id": {"type": "integer", "description": "Program identifier"},
-                    "course": {"type": "string", "description": "Course name as the student wrote it"},
+                    "course": {
+                        "type": "string",
+                        "description": "Course name as the student wrote it",
+                    },
                 },
                 "required": ["program_id", "course"],
             },
