@@ -30,6 +30,12 @@ async def register_coordination(client: AsyncClient) -> str:
     return get_token_issuer().issue(subject="1", role="coordination")
 
 
+def issue_token(role: str) -> str:
+    from app.api.v1.deps import get_token_issuer
+
+    return get_token_issuer().issue(subject="1", role=role)
+
+
 async def test_health(client: AsyncClient) -> None:
     response = await client.get("/health")
     assert response.status_code == 200
@@ -171,8 +177,45 @@ async def test_student_can_register_and_login(client: AsyncClient) -> None:
 
 
 async def test_login_with_wrong_password_returns_401(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "jose@pascualbravo.edu.co",
+            "password": "a-strong-password",
+            "first_name": "Jose",
+            "last_name": "Hernandez",
+            "document": "1000123456",
+            "program_id": program.json()["id"],
+            "current_semester": 4,
+        },
+    )
+
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": "nobody@pascualbravo.edu.co", "password": "wrong"},
+        json={"email": "jose@pascualbravo.edu.co", "password": "definitely-not-it"},
     )
     assert response.status_code == 401
+
+    unknown = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "nadie@pascualbravo.edu.co", "password": "definitely-not-it"},
+    )
+    assert unknown.status_code == 401
+    assert unknown.json() == response.json()
+
+
+async def test_student_token_cannot_reach_admin_routes(client: AsyncClient) -> None:
+    """A valid token is not authorisation. Role gating is a separate check."""
+    response = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers={"Authorization": f"Bearer {issue_token('student')}"},
+    )
+    assert response.status_code == 403
+    assert "coordination" in response.json()["detail"].lower()

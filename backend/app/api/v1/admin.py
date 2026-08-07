@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.deps import (
-    CurrentUser,
     get_academic_reader,
     get_academic_repository,
     require_coordination,
@@ -36,7 +35,6 @@ router = APIRouter(
 
 RepoDep = Annotated[SqlAlchemyAcademicRepository, Depends(get_academic_repository)]
 ReaderDep = Annotated[SqlAlchemyAcademicReader, Depends(get_academic_reader)]
-CoordinationDep = Annotated[CurrentUser, Depends(require_coordination)]
 
 
 @router.get("/programs", response_model=list[ProgramOut])

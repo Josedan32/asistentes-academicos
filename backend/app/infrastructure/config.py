@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,7 +18,12 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     ollama_keep_alive: str = "10m"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Absolute path: `env_file=".env"` resolves against the current working directory,
+    # so settings would load from backend/ but not from the repository root.
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).resolve().parents[2] / ".env",
+        extra="ignore",
+    )
 
 
 @lru_cache

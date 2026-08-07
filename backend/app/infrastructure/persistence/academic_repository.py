@@ -133,19 +133,19 @@ class SqlAlchemyAcademicRepository:
                 curriculum.entries[index] = replace(entry, id=model.id)
                 self._add_prerequisites(model.id, entry.prerequisite_course_ids)
             else:
-                model = await self._session.get(CurriculumEntryModel, entry.id)
-                if model is None:
+                existing = await self._session.get(CurriculumEntryModel, entry.id)
+                if existing is None:
                     raise LookupError(f"curriculum entry {entry.id} vanished")
 
-                if model.semester != entry.semester or model.credits != entry.credits:
-                    model.semester = entry.semester
-                    model.credits = entry.credits
+                if existing.semester != entry.semester or existing.credits != entry.credits:
+                    existing.semester = entry.semester
+                    existing.credits = entry.credits
 
                 stored = set(
                     (
                         await self._session.execute(
                             select(PrerequisiteModel.required_course_id).where(
-                                PrerequisiteModel.curriculum_entry_id == model.id
+                                PrerequisiteModel.curriculum_entry_id == existing.id
                             )
                         )
                     )
@@ -155,10 +155,10 @@ class SqlAlchemyAcademicRepository:
                 if stored != set(entry.prerequisite_course_ids):
                     await self._session.execute(
                         delete(PrerequisiteModel).where(
-                            PrerequisiteModel.curriculum_entry_id == model.id
+                            PrerequisiteModel.curriculum_entry_id == existing.id
                         )
                     )
-                    self._add_prerequisites(model.id, entry.prerequisite_course_ids)
+                    self._add_prerequisites(existing.id, entry.prerequisite_course_ids)
 
         await self._session.commit()
 

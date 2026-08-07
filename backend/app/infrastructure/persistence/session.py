@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from functools import lru_cache
+from typing import Any
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
@@ -23,7 +24,7 @@ def create_database_engine(url: str) -> AsyncEngine:
     if engine.dialect.name == "sqlite":
 
         @event.listens_for(engine.sync_engine, "connect")
-        def _enable_foreign_keys(dbapi_connection, connection_record) -> None:
+        def _enable_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
