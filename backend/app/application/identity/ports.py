@@ -1,0 +1,21 @@
+from typing import Any, Protocol
+
+from app.domain.identity.entities import StudentProfile, User
+
+
+class PasswordHasher(Protocol):
+    def hash(self, password: str) -> str: ...
+
+    def verify(self, password: str, password_hash: str) -> bool: ...
+
+
+class TokenIssuer(Protocol):
+    def issue(self, *, subject: str, role: str) -> str: ...
+
+    def decode(self, token: str) -> dict[str, Any]: ...
+
+
+class UserRepository(Protocol):
+    async def find_by_email(self, email: str) -> User | None: ...
+
+    async def add(self, user: User, profile: StudentProfile | None) -> User: ...
