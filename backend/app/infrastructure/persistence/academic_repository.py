@@ -1,4 +1,5 @@
 import unicodedata
+from dataclasses import replace
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -119,7 +120,7 @@ class SqlAlchemyAcademicRepository:
         if program_id is None:
             raise ValueError("cannot save a curriculum for an unpersisted program")
 
-        for entry in curriculum.entries:
+        for index, entry in enumerate(curriculum.entries):
             if entry.id is None:
                 model = CurriculumEntryModel(
                     program_id=program_id,
@@ -129,24 +130,42 @@ class SqlAlchemyAcademicRepository:
                 )
                 self._session.add(model)
                 await self._session.flush()
+                curriculum.entries[index] = replace(entry, id=model.id)
+                self._add_prerequisites(model.id, entry.prerequisite_course_ids)
             else:
                 model = await self._session.get(CurriculumEntryModel, entry.id)
                 if model is None:
                     raise LookupError(f"curriculum entry {entry.id} vanished")
-                model.semester = entry.semester
-                model.credits = entry.credits
-                await self._session.execute(
-                    delete(PrerequisiteModel).where(
-                        PrerequisiteModel.curriculum_entry_id == model.id
-                    )
-                )
 
-            for required_course_id in entry.prerequisite_course_ids:
-                self._session.add(
-                    PrerequisiteModel(
-                        curriculum_entry_id=model.id,
-                        required_course_id=required_course_id,
+                if model.semester != entry.semester or model.credits != entry.credits:
+                    model.semester = entry.semester
+                    model.credits = entry.credits
+
+                stored = set(
+                    (
+                        await self._session.execute(
+                            select(PrerequisiteModel.required_course_id).where(
+                                PrerequisiteModel.curriculum_entry_id == model.id
+                            )
+                        )
                     )
+                    .scalars()
+                    .all()
                 )
+                if stored != set(entry.prerequisite_course_ids):
+                    await self._session.execute(
+                        delete(PrerequisiteModel).where(
+                            PrerequisiteModel.curriculum_entry_id == model.id
+                        )
+                    )
+                    self._add_prerequisites(model.id, entry.prerequisite_course_ids)
 
         await self._session.commit()
+
+    def _add_prerequisites(self, entry_id: int, course_ids: tuple[int, ...]) -> None:
+        for required_course_id in course_ids:
+            self._session.add(
+                PrerequisiteModel(
+                    curriculum_entry_id=entry_id, required_course_id=required_course_id
+                )
+            )

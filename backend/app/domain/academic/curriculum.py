@@ -24,6 +24,10 @@ class Curriculum:
                 return entry.semester
         return None
 
+    def entry_for(self, course_id: int) -> CurriculumEntry:
+        """Return the entry for a course, raising if the course is not in this curriculum."""
+        return self.entries[self._index_of(course_id)]
+
     def assign(
         self,
         *,

@@ -60,14 +60,14 @@ class AssignCourseToCurriculum:
             raise LookupError(f"course {course_id} does not exist")
 
         curriculum = await self.repository.load_curriculum(program_id)
-        entry = curriculum.assign(
+        curriculum.assign(
             course_id=course_id,
             semester=semester,
             credits=credits,
             prerequisite_course_ids=prerequisite_course_ids,
         )
         await self.repository.save_curriculum(curriculum)
-        return entry
+        return curriculum.entry_for(course_id)
 
 
 @dataclass
@@ -78,6 +78,6 @@ class MoveCourseToSemester:
         self, *, program_id: int, course_id: int, new_semester: int
     ) -> CurriculumEntry:
         curriculum = await self.repository.load_curriculum(program_id)
-        entry = curriculum.move(course_id=course_id, new_semester=new_semester)
+        curriculum.move(course_id=course_id, new_semester=new_semester)
         await self.repository.save_curriculum(curriculum)
-        return entry
+        return curriculum.entry_for(course_id)
