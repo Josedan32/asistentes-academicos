@@ -19,6 +19,8 @@ produced the C1 defect in Plan 1.
 - `get_course_detail` always reports credits within the student's own curriculum; it
   cannot be asked about another program's curriculum. `find_course_in_programs` exists
   for that question instead.
-- The other three tools keep `program_id` as a model-generated argument, matching spec
-  §7.4's table and the measured 47% baseline (ADR 0006) — only `get_course_detail`
-  deviates, and only because Plan 1 already found the concrete bug this avoids.
+- Two tools take `program_id` as a model-generated argument (`list_semester_courses` and
+  `get_prerequisites`), matching spec §7.4's table and the measured 47% baseline (ADR 0006).
+  `find_course_in_programs` takes no `program_id` at all — it searches across programs.
+  Only `get_course_detail` receives injected `program_id`, and only because Plan 1 already
+  found the concrete bug this avoids.

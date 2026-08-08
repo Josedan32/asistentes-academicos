@@ -78,8 +78,9 @@ field, and the JSON schema shown to the model never mentions it (spec §7.4's si
 the loop from the authenticated student's `StudentContext` and passed to every handler —
 the same identity-injection principle spec §7.5 applies to `student_id`, extended here
 because Plan 1 already hit the concrete bug an optional, model-supplied `program_id`
-produces (ADR 0008). The other three tools keep `program_id` as a normal, model-generated
-argument.
+produces (ADR 0008). Two other tools take `program_id` as a model-generated argument:
+`list_semester_courses` and `get_prerequisites`. `find_course_in_programs` takes no
+`program_id` at all — its whole purpose is searching across programs.
 
 ## Persistence
 
