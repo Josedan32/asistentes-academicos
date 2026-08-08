@@ -49,3 +49,17 @@ class PromptComposer(Protocol):
     def compose_system_prompt(self, context: StudentContext) -> tuple[str, str]:
         """Returns (prompt_text, prompt_version). Every Message records the version."""
         ...
+
+
+class InferenceGate(Protocol):
+    """One inference at a time, across every uvicorn worker process (spec §8.2)."""
+
+    async def enqueue(self) -> str:
+        """Returns a ticket id."""
+        ...
+
+    async def position(self, ticket: str) -> int | None:
+        """1-indexed queue position, or None if the ticket is unknown/already released."""
+        ...
+
+    async def release(self, ticket: str) -> None: ...

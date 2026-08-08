@@ -23,6 +23,7 @@ dev = [
     "pytest-cov>=6.0",
     "ruff>=0.8",
     "mypy>=1.13",
+    "fakeredis>=2.26",
 ]
 
 [build-system]
@@ -35,8 +36,12 @@ include = ["app*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["llm: requires a running Ollama instance"]
-addopts = "-m 'not llm'"
+markers = [
+    "llm: requires a running Ollama instance",
+    "groq: requires GROQ_API_KEY and network access",
+    "redis: requires a running Redis instance",
+]
+addopts = "-m 'not llm and not groq and not redis'"
 
 [tool.ruff]
 line-length = 100
