@@ -16,6 +16,7 @@ from app.api.v1.deps import (
     LLMProviderDep,
     PromptComposerDep,
     UserRepositoryDep,
+    require_authentication,
     require_student,
 )
 from app.api.v1.schemas import ChatIn, FeedbackIn
@@ -29,6 +30,14 @@ ESTIMATED_SECONDS_PER_TURN = 5
 QUEUE_POLL_SECONDS = 0.5
 MAX_QUEUE_WAIT_SECONDS = 180
 MAX_QUEUE_POLL_ITERATIONS = int(MAX_QUEUE_WAIT_SECONDS / QUEUE_POLL_SECONDS)
+
+
+@router.get("/model")
+async def get_model(
+    user: Annotated[CurrentUser, Depends(require_authentication)],
+    provider: LLMProviderDep,
+) -> dict[str, str]:
+    return {"model": provider.model}
 
 
 def _sse(event: str, data: dict[str, Any]) -> bytes:

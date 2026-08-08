@@ -1,8 +1,12 @@
+from contextlib import aclosing
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.v1.deps import get_db_session
+from app.domain.identity.entities import Role, User
+from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.main import app
 
 
@@ -22,12 +26,23 @@ async def client(session_factory: async_sessionmaker[AsyncSession]) -> AsyncClie
 async def register_coordination(client: AsyncClient) -> str:
     """Coordination accounts are seeded, never self-registered.
 
-    Role gating reads the token only, so a directly issued token is enough to
-    exercise the admin endpoints.
+    No public endpoint creates one, so this reaches into the DB session the
+    `client` fixture already wired up (via the `get_db_session` override) to
+    persist the row directly, then issues a token for it. A directly issued
+    token used to be enough for role-gated write endpoints, which only decode
+    the claims — but `/me` does a real `find_by_id` lookup, so the row must
+    actually exist.
     """
     from app.api.v1.deps import get_token_issuer
 
-    return get_token_issuer().issue(subject="1", role="coordination")
+    async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
+        session = await anext(sessions)
+        user = await SqlAlchemyUserRepository(session).add(
+            User(email="coordinacion@pascualbravo.edu.co", password_hash="x",
+                 role=Role.COORDINATION),
+            None,
+        )
+    return get_token_issuer().issue(subject=str(user.id), role="coordination")
 
 
 def issue_token(role: str) -> str:
@@ -247,3 +262,56 @@ async def test_student_token_cannot_reach_admin_routes(client: AsyncClient) -> N
     )
     assert response.status_code == 403
     assert "coordination" in response.json()["detail"].lower()
+
+
+async def test_me_returns_student_profile_and_program(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    program_id = program.json()["id"]
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "ana@pascualbravo.edu.co", "password": "a-strong-password",
+            "first_name": "Ana", "last_name": "Marin", "document": "123",
+            "program_id": program_id, "current_semester": 5,
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "ana@pascualbravo.edu.co", "password": "a-strong-password"},
+    )
+    student_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    response = await client.get("/api/v1/me", headers=student_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["role"] == "student"
+    assert body["first_name"] == "Ana"
+    assert body["program_code"] == "ISW"
+    assert body["current_semester"] == 5
+
+
+async def test_me_for_coordination_has_no_student_fields(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    response = await client.get("/api/v1/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["role"] == "coordination"
+    assert body["program_id"] is None
+
+
+async def test_me_requires_authentication(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/me")
+    assert response.status_code == 401
+
+
+async def test_chat_model_endpoint_reports_the_configured_model(client: AsyncClient) -> None:
+    token = issue_token("student")
+    response = await client.get("/api/v1/chat/model", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["model"]

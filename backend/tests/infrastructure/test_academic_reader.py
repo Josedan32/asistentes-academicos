@@ -8,6 +8,7 @@ from app.application.academic.queries import (
     FindCourseInPrograms,
     GetCourseDetail,
     GetPrerequisites,
+    GetProgram,
     ListSemesterCourses,
 )
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
@@ -157,3 +158,18 @@ async def test_prerequisite_inside_the_curriculum_reports_its_semester(
 ) -> None:
     result = await GetPrerequisites(reader).execute(program_id=1, course="Base de Datos 2")
     assert [p.semester for p in result.prerequisites] == [3]
+
+
+async def test_gets_a_single_program_with_its_course_count(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    program = await GetProgram(reader).execute(program_id=1)
+    assert program is not None
+    assert program.code == "ISW"
+    assert program.course_count == 2  # BD1 (sem 3) + BD2 (sem 4), from the fixture
+
+
+async def test_get_program_returns_none_for_unknown_id(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    assert await GetProgram(reader).execute(program_id=999) is None

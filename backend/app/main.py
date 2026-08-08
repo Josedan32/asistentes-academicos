@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin, auth, chat, public
+from app.api.v1 import admin, auth, chat, me, public
 from app.infrastructure.config import get_settings
 
 DEV_JWT_SECRET = "dev-only-insecure-secret-replace-me-32b"
@@ -44,6 +44,7 @@ app.include_router(public.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(chat.router)
+app.include_router(me.router)
 
 
 @app.get("/health", tags=["ops"])

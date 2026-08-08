@@ -41,6 +41,23 @@ class SqlAlchemyAcademicReader:
             for program, count in rows
         ]
 
+    async def get_program(self, program_id: int) -> ProgramSummary | None:
+        statement = (
+            select(ProgramModel, func.count(CurriculumEntryModel.id))
+            .outerjoin(CurriculumEntryModel, CurriculumEntryModel.program_id == ProgramModel.id)
+            .where(ProgramModel.id == program_id)
+            .group_by(ProgramModel.id)
+        )
+        row = (await self._session.execute(statement)).first()
+        if row is None:
+            return None
+        program, count = row
+        return ProgramSummary(
+            id=program.id, code=program.code, name=program.name,
+            semester_count=program.semester_count, is_active=program.is_active,
+            course_count=count,
+        )
+
     async def list_semester_courses(
         self, program_id: int, semester: int
     ) -> list[CourseSummary]:

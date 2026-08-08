@@ -22,6 +22,14 @@ class ListPrograms:
 
 
 @dataclass
+class GetProgram:
+    reader: AcademicReader
+
+    async def execute(self, *, program_id: int) -> ProgramSummary | None:
+        return await self.reader.get_program(program_id)
+
+
+@dataclass
 class ListSemesterCourses:
     reader: AcademicReader
 

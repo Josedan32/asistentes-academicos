@@ -43,3 +43,23 @@ async def test_returns_none_for_a_coordination_account(session: AsyncSession) ->
 async def test_returns_none_for_an_unknown_user(session: AsyncSession) -> None:
     repository = SqlAlchemyUserRepository(session)
     assert await repository.find_profile_by_user_id(999) is None
+
+
+async def test_finds_a_user_by_id(session: AsyncSession) -> None:
+    program_id = await _seed_program(session)
+    repository = SqlAlchemyUserRepository(session)
+    created = await repository.add(
+        User(email="ana@pascualbravo.edu.co", password_hash="hash", role=Role.STUDENT),
+        StudentProfile(user_id=0, first_name="Ana", last_name="Marin", document="123",
+                        program_id=program_id, current_semester=1),
+    )
+    assert created.id is not None
+
+    found = await repository.find_by_id(created.id)
+    assert found is not None
+    assert found.email == "ana@pascualbravo.edu.co"
+
+
+async def test_find_by_id_returns_none_for_unknown_user(session: AsyncSession) -> None:
+    repository = SqlAlchemyUserRepository(session)
+    assert await repository.find_by_id(999) is None

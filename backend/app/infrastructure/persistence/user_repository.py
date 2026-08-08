@@ -68,3 +68,10 @@ class SqlAlchemyUserRepository:
             program_id=model.program_id,
             current_semester=model.current_semester,
         )
+
+    async def find_by_id(self, user_id: int) -> User | None:
+        model = await self._session.get(UserModel, user_id)
+        if model is None:
+            return None
+        return User(id=model.id, email=model.email, password_hash=model.password_hash,
+                     role=Role(model.role))

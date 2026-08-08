@@ -92,3 +92,20 @@ class ChatIn(BaseModel):
 class FeedbackIn(BaseModel):
     value: Literal["up", "down"]
     comment: str | None = Field(default=None, max_length=500)
+
+
+class MeOut(BaseModel):
+    id: int
+    email: str
+    role: str
+    first_name: str | None = None
+    last_name: str | None = None
+    document: str | None = None
+    program_id: int | None = None
+    program_code: str | None = None
+    program_name: str | None = None
+    current_semester: int | None = None
+
+
+class ModelOut(BaseModel):
+    model: str
