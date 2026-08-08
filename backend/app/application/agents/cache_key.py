@@ -12,7 +12,13 @@ def cache_key(
         "messages": [
             {"role": m.role, "content": m.content, "name": m.name} for m in messages
         ],
-        "tools": sorted(t.name for t in (tools or [])),
+        # Full definition, not just the name: a tool's JSON schema changing (e.g. an
+        # argument removed to fix a model behaviour bug) must invalidate old cached
+        # completions generated under the previous schema, not keep serving them.
+        "tools": [
+            {"name": t.name, "description": t.description, "parameters": t.parameters}
+            for t in sorted((tools or []), key=lambda t: t.name)
+        ],
     }
     canonical = json.dumps(payload, sort_keys=True)
     return hashlib.sha256(canonical.encode()).hexdigest()
