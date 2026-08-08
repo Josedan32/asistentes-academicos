@@ -105,8 +105,12 @@ async def test_get_course_detail_uses_the_injected_program_id_for_credits(
     spec = TOOLS["get_course_detail"]
     args = spec.argument_model(course="Base de Datos 2")
 
-    in_electronics = await spec.handler(reader, args, ToolContext(program_id=electronics.id))
-    in_software = await spec.handler(reader, args, ToolContext(program_id=software.id))
+    in_electronics = await spec.handler(
+        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+    )
+    in_software = await spec.handler(
+        reader, args, ToolContext(program_id=software.id, current_semester=4)
+    )
 
     assert in_electronics.credits == 3
     assert in_software.credits == 4
@@ -137,11 +141,70 @@ async def test_list_semester_courses_uses_the_injected_program_id(session: Async
     spec = TOOLS["list_semester_courses"]
     args = spec.argument_model(semester=3)
 
-    in_software = await spec.handler(reader, args, ToolContext(program_id=software.id))
-    in_electronics = await spec.handler(reader, args, ToolContext(program_id=electronics.id))
+    in_software = await spec.handler(
+        reader, args, ToolContext(program_id=software.id, current_semester=4)
+    )
+    in_electronics = await spec.handler(
+        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+    )
 
     assert [c.code for c in in_software] == ["BD1"]
     assert [c.code for c in in_electronics] == ["CIR1"]
+
+
+async def test_list_semester_courses_defaults_to_the_students_own_semester(
+    session: AsyncSession,
+) -> None:
+    """qwen2.5:3b sometimes asks the student which semester they mean even when they are
+    plainly asking about their own ("que puedo ver este semestre") — omitting the argument
+    must not be a dead end, it must fall back to the injected current_semester."""
+    software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
+    bd = CourseModel(
+        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos", default_credits=3,
+    )
+    session.add_all([software, bd])
+    await session.commit()
+    session.add(
+        CurriculumEntryModel(program_id=software.id, course_id=bd.id, semester=5, credits=3)
+    )
+    await session.commit()
+
+    reader = SqlAlchemyAcademicReader(session)
+    spec = TOOLS["list_semester_courses"]
+    args = spec.argument_model()
+
+    rows = await spec.handler(
+        reader, args, ToolContext(program_id=software.id, current_semester=5)
+    )
+
+    assert [c.code for c in rows] == ["BD1"]
+
+
+async def test_list_semester_courses_honours_an_explicit_semester_over_the_default(
+    session: AsyncSession,
+) -> None:
+    software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
+    bd = CourseModel(
+        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos", default_credits=3,
+    )
+    session.add_all([software, bd])
+    await session.commit()
+    session.add(
+        CurriculumEntryModel(program_id=software.id, course_id=bd.id, semester=6, credits=3)
+    )
+    await session.commit()
+
+    reader = SqlAlchemyAcademicReader(session)
+    spec = TOOLS["list_semester_courses"]
+    args = spec.argument_model(semester=6)
+
+    rows = await spec.handler(
+        reader, args, ToolContext(program_id=software.id, current_semester=5)
+    )
+
+    assert [c.code for c in rows] == ["BD1"]
 
 
 async def test_get_prerequisites_uses_the_injected_program_id(session: AsyncSession) -> None:
@@ -177,8 +240,12 @@ async def test_get_prerequisites_uses_the_injected_program_id(session: AsyncSess
     spec = TOOLS["get_prerequisites"]
     args = spec.argument_model(course="Base de Datos 2")
 
-    in_software = await spec.handler(reader, args, ToolContext(program_id=software.id))
-    in_electronics = await spec.handler(reader, args, ToolContext(program_id=electronics.id))
+    in_software = await spec.handler(
+        reader, args, ToolContext(program_id=software.id, current_semester=4)
+    )
+    in_electronics = await spec.handler(
+        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+    )
 
     assert [p.course_code for p in in_software.prerequisites] == ["BD1"]
     assert in_electronics.prerequisites == []

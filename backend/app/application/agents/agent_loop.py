@@ -119,7 +119,13 @@ class AgentLoop:
                 start = time.monotonic()
                 try:
                     result = await asyncio.wait_for(
-                        spec.handler(self.reader, args, ToolContext(program_id=context.program_id)),
+                        spec.handler(
+                            self.reader, args,
+                            ToolContext(
+                                program_id=context.program_id,
+                                current_semester=context.current_semester,
+                            ),
+                        ),
                         timeout=TOOL_TIMEOUT_SECONDS,
                     )
                 except TimeoutError:

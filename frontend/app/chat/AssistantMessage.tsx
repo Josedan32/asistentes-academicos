@@ -4,6 +4,7 @@ import type { ChatMessage } from "@/lib/hooks/useChatStream";
 import { useTypewriter } from "@/lib/hooks/useTypewriter";
 import type { RobotState } from "@/lib/robot-state";
 import { AssistantAvatar } from "./AssistantAvatar";
+import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallCard } from "./ToolCallCard";
 
 export function AssistantMessage({
@@ -26,8 +27,8 @@ export function AssistantMessage({
 
         {visibleContent && (
           <div className="rounded-[14px_14px_14px_4px] border border-border bg-surface
-                           p-[16px_18px] text-[15.5px] leading-[1.65] text-text-body">
-            {visibleContent}
+                           p-[16px_18px]">
+            <MarkdownContent content={visibleContent} />
           </div>
         )}
 

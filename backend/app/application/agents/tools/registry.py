@@ -13,6 +13,7 @@ class ToolContext:
     """Server-injected values a tool handler may need but the model never supplies."""
 
     program_id: int
+    current_semester: int
 
 
 @dataclass(frozen=True)
