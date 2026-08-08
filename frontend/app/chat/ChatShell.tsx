@@ -79,7 +79,7 @@ export function ChatShell({
   }
 
   return (
-    <div className="grid h-screen grid-cols-[288px_1fr] overflow-hidden">
+    <div className="grid h-screen grid-cols-[288px_1fr] grid-rows-[100%] overflow-hidden">
       <Sidebar
         activeAssistant={activeAssistant}
         onSelectAssistant={handleSelectAssistant}

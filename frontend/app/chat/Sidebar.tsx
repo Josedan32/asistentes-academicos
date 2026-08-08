@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { getMe } from "@/lib/api/me";
 import { listConversations } from "@/lib/api/conversations";
 import { listCurriculum } from "@/lib/api/programs";
@@ -24,6 +25,7 @@ export function Sidebar({
 }: SidebarProps) {
   const router = useRouter();
   const { logout } = useAuth();
+  const [assistantsExpanded, setAssistantsExpanded] = useState(true);
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
   const curriculumQuery = useQuery({
     queryKey: ["curriculum", meQuery.data?.program_id, meQuery.data?.current_semester],
@@ -56,9 +58,14 @@ export function Sidebar({
       </div>
 
       <div className="flex flex-none flex-col gap-[9px] px-[18px] pb-[14px]">
-        <div className="text-[11px] font-semibold uppercase tracking-[.14em] text-accent-muted">
+        <button
+          onClick={() => setAssistantsExpanded((prev) => !prev)}
+          className="flex items-center justify-between text-[11px] font-semibold uppercase
+                     tracking-[.14em] text-accent-muted hover:text-accent-lighter"
+        >
           Asistente
-        </div>
+          {assistantsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
         <div className="flex flex-col gap-1">
           <button
             onClick={() => onSelectAssistant({ type: "general" })}
@@ -73,39 +80,50 @@ export function Sidebar({
             <span className="text-[14px] font-semibold">General de Carrera</span>
           </button>
 
-          {meQuery.data?.current_semester != null && (
-            <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.1em]
-                             text-accent-muted">
-              Materias · semestre {meQuery.data.current_semester}
-            </div>
-          )}
+          {assistantsExpanded && (
+            <>
+              {meQuery.data?.current_semester != null && (
+                <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.1em]
+                                 text-accent-muted">
+                  Materias · semestre {meQuery.data.current_semester}
+                </div>
+              )}
 
-          {(curriculumQuery.data ?? []).map((course) => {
-            const isActive = activeAssistant.type === "course" &&
-              activeAssistant.courseId === course.id;
-            return (
-              <button
-                key={course.id}
-                onClick={() =>
-                  onSelectAssistant({ type: "course", courseId: course.id, courseName: course.name })
-                }
-                className={
-                  isActive
-                    ? "flex items-center gap-[10px] rounded-[7px] bg-accent px-3 py-[9px] text-white"
-                    : "flex items-center gap-[10px] rounded-[7px] px-3 py-[9px] text-accent-lighter " +
-                      "hover:bg-navy-hover"
-                }
-              >
-                <span className="h-[7px] w-[7px] rounded-full bg-[#3F6693]" />
-                <span className="text-[14px]">{course.name}</span>
-              </button>
-            );
-          })}
+              <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
+                {(curriculumQuery.data ?? []).map((course) => {
+                  const isActive = activeAssistant.type === "course" &&
+                    activeAssistant.courseId === course.id;
+                  return (
+                    <button
+                      key={course.id}
+                      onClick={() =>
+                        onSelectAssistant(
+                          { type: "course", courseId: course.id, courseName: course.name }
+                        )
+                      }
+                      className={
+                        isActive
+                          ? "flex items-center gap-[10px] rounded-[7px] bg-accent px-3 py-[9px] " +
+                            "text-white"
+                          : "flex items-center gap-[10px] rounded-[7px] px-3 py-[9px] " +
+                            "text-accent-lighter hover:bg-navy-hover"
+                      }
+                    >
+                      <span className="h-[7px] w-[7px] flex-none rounded-full bg-[#3F6693]" />
+                      <span className="truncate text-[14px]">{course.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-        <div className="px-3 pt-[6px] text-[12px] leading-[1.45] text-accent-muted">
-          Cambiar de asistente abre una conversación nueva. No se comparte contexto entre
-          materias.
-        </div>
+        {assistantsExpanded && (
+          <div className="px-3 pt-[6px] text-[12px] leading-[1.45] text-accent-muted">
+            Cambiar de asistente abre una conversación nueva. No se comparte contexto entre
+            materias.
+          </div>
+        )}
       </div>
 
       <div className="mx-[18px] mb-[14px] mt-[6px] h-px bg-navy-divider" />

@@ -49,9 +49,11 @@ export function useChatStream(courseId: number | null) {
   const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const toolSequenceRef = useRef(0);
+  const sendingRef = useRef(false);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
+    sendingRef.current = false;
     setConversationId(null);
     setMessages([]);
     setRunState("idle");
@@ -62,6 +64,7 @@ export function useChatStream(courseId: number | null) {
 
   const loadConversation = useCallback((detail: ConversationDetailOut) => {
     abortRef.current?.abort();
+    sendingRef.current = false;
     setConversationId(detail.id);
     setMessages(
       detail.messages.map((message) => ({
@@ -88,6 +91,16 @@ export function useChatStream(courseId: number | null) {
 
   const send = useCallback(
     async (text: string) => {
+      // Guards against sending a second message while the first is still in flight — e.g. a
+      // student typing "Hola" while the previous turn is still loading the model. Without
+      // this, both requests reach the backend with the same (still-null) conversation_id and
+      // each creates its own conversation server-side, producing exactly the "some messages
+      // never get a visible reply" symptom this was written to fix. `runState` isn't a
+      // dependency here on purpose — the check must see the *current* value at call time, not
+      // the value from whenever this closure was created.
+      if (sendingRef.current) return;
+      sendingRef.current = true;
+
       setErrorInfo(null);
       const userMessageId = `local-user-${Date.now()}`;
       const assistantMessageId = `local-assistant-${Date.now()}`;
@@ -186,6 +199,8 @@ export function useChatStream(courseId: number | null) {
         } else {
           setRunState("idle");
         }
+      } finally {
+        sendingRef.current = false;
       }
     },
     [conversationId, courseId]

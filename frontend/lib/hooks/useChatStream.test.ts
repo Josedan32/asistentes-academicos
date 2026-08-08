@@ -126,6 +126,62 @@ describe("useChatStream", () => {
     expect(result.current.messages).toEqual([]);
   });
 
+  it("ignores a second send() while the first is still in flight", async () => {
+    let releaseController: (() => void) | null = null;
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, options: RequestInit) =>
+        new Promise((resolve, reject) => {
+          releaseController = () => reject(new DOMException("Aborted", "AbortError"));
+          options.signal?.addEventListener("abort", () => releaseController?.());
+        })
+    );
+    const { result } = renderHook(() => useChatStream(null));
+
+    let firstSend: Promise<void>;
+    act(() => {
+      firstSend = result.current.send("primera");
+    });
+    await waitFor(() => expect(result.current.runState).toBe("thinking"));
+
+    // A second call while the first is still unresolved — e.g. the student typing again
+    // before the model responds — must not create a second user/assistant message pair.
+    await act(async () => {
+      await result.current.send("segunda, mientras la primera sigue en curso");
+    });
+
+    expect(result.current.messages).toHaveLength(2);
+    expect(result.current.messages[0].content).toBe("primera");
+
+    act(() => {
+      result.current.stop();
+    });
+    await act(async () => {
+      await firstSend;
+    });
+  });
+
+  it("allows a new send() once the previous one has finished", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      fakeStreamResponse([
+        'event: token\ndata: {"text":"ok"}\n\n',
+        'event: done\ndata: {"tool_count":0,"total_ms":0,"source_count":0,' +
+          '"conversation_id":1,"message_id":1}\n\n',
+      ])
+    );
+    const { result } = renderHook(() => useChatStream(null));
+
+    await act(async () => {
+      await result.current.send("primera");
+    });
+    await waitFor(() => expect(result.current.runState).toBe("idle"));
+
+    await act(async () => {
+      await result.current.send("segunda");
+    });
+
+    expect(result.current.messages).toHaveLength(4);
+  });
+
   it("clearError() returns to idle without discarding message history", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       fakeStreamResponse(['event: error\ndata: {"code":"x","message":"boom"}\n\n'])
