@@ -297,6 +297,23 @@ async def test_feedback_is_rejected_for_another_students_message(client, session
     assert response.status_code == 404
 
 
+async def test_done_event_includes_a_message_id_feedback_can_target(client: AsyncClient) -> None:
+    headers = await student_headers(client)
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[LLMResponse(content="Hola, en que te ayudo?")]
+    )
+
+    response = await client.post("/api/v1/chat", json={"message": "hola"}, headers=headers)
+    assert response.status_code == 200
+    done_event = next(data for name, data in _events(response.text) if name == "done")
+    message_id = done_event["message_id"]
+
+    feedback = await client.post(
+        f"/api/v1/chat/messages/{message_id}/feedback", json={"value": "up"}, headers=headers
+    )
+    assert feedback.status_code == 201
+
+
 async def test_lists_conversations_most_recent_first(client: AsyncClient) -> None:
     headers = await student_headers(client)
 

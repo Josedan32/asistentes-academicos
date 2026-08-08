@@ -37,6 +37,7 @@ class DoneEvent:
     content: str
     tool_count: int
     hit_iteration_cap: bool
+    message_id: int
 
 
 LoopEvent = ThinkingEvent | ToolCallEvent | DoneEvent
@@ -82,12 +83,13 @@ class AgentLoop:
             response = await self.provider.complete(messages, tools=tool_defs)
 
             if not response.tool_calls:
-                await self.conversations.add_message(
+                saved = await self.conversations.add_message(
                     Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
                             content=response.content or "", prompt_version=prompt_version)
                 )
+                assert saved.id is not None
                 yield DoneEvent(content=response.content or "", tool_count=tool_count,
-                                 hit_iteration_cap=False)
+                                 hit_iteration_cap=False, message_id=saved.id)
                 return
 
             assistant_row = await self.conversations.add_message(
@@ -143,8 +145,10 @@ class AgentLoop:
                 messages.append(LLMMessage(role="tool", name=call.name, tool_call_id=call.id,
                                             content=json.dumps(jsonable)))
 
-        await self.conversations.add_message(
+        saved = await self.conversations.add_message(
             Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
                     content=FALLBACK_MESSAGE, prompt_version=prompt_version)
         )
-        yield DoneEvent(content=FALLBACK_MESSAGE, tool_count=tool_count, hit_iteration_cap=True)
+        assert saved.id is not None
+        yield DoneEvent(content=FALLBACK_MESSAGE, tool_count=tool_count, hit_iteration_cap=True,
+                         message_id=saved.id)

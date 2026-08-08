@@ -132,7 +132,7 @@ async def chat(
                         yield _sse("token", {"text": token})
                     yield _sse("done", {
                         "tool_count": event.tool_count, "total_ms": 0, "source_count": 0,
-                        "conversation_id": conversation.id,
+                        "conversation_id": conversation.id, "message_id": event.message_id,
                     })
         except Exception as error:
             yield _sse("error", {"code": "agent_loop_failed", "message": str(error)})

@@ -62,6 +62,25 @@ async def test_a_final_answer_without_a_tool_call_yields_one_done_event(
     assert [m.role.value for m in conversations.messages] == ["user", "assistant"]
 
 
+async def test_done_event_carries_the_persisted_message_id(session: AsyncSession) -> None:
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[LLMResponse(content="No hay materias.")])
+    conversations = InMemoryConversationRepository()
+    conversation = Conversation(id=1, user_id=1, course_id=None, title="t")
+
+    events = [
+        event
+        async for event in _loop(provider, reader, conversations).run(
+            conversation=conversation, history=[], user_message="Que veo?",
+            context=StudentContext(program_id=program_id, current_semester=4),
+        )
+    ]
+
+    done = next(e for e in events if isinstance(e, DoneEvent))
+    assert isinstance(done.message_id, int)
+    assert done.message_id == conversations.messages[-1].id
+
+
 async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(
     session: AsyncSession,
 ) -> None:
