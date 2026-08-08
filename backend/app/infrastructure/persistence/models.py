@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -125,8 +126,8 @@ class ToolCallModel(Base):
         ForeignKey("messages.id", ondelete="CASCADE"), index=True
     )
     name: Mapped[str] = mapped_column(String(80))
-    arguments: Mapped[dict] = mapped_column(JSON)
-    result: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    arguments: Mapped[dict[str, Any]] = mapped_column(JSON)
+    result: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer)
     row_count: Mapped[int] = mapped_column(Integer)
     sequence: Mapped[int] = mapped_column(Integer)
