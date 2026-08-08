@@ -25,8 +25,15 @@ from app.application.academic.commands import (
     CreateCourse,
     CreateProgram,
     MoveCourseToSemester,
+    UpdateCourse,
+    UpdateProgram,
 )
-from app.application.academic.queries import GetCurriculumBoard, ListCourses, ListPrograms
+from app.application.academic.queries import (
+    GetCurriculumBoard,
+    GetProgram,
+    ListCourses,
+    ListPrograms,
+)
 from app.domain.academic.exceptions import AcademicError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
@@ -80,6 +87,29 @@ async def create_program(payload: ProgramIn, repository: RepoDep) -> ProgramOut:
     )
 
 
+@router.patch("/programs/{program_id}", response_model=ProgramOut)
+async def update_program(
+    program_id: int, payload: ProgramIn, repository: RepoDep, reader: ReaderDep
+) -> ProgramOut:
+    try:
+        await UpdateProgram(repository).execute(
+            program_id=program_id, code=payload.code, name=payload.name,
+            semester_count=payload.semester_count, is_active=payload.is_active,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+    program = await GetProgram(reader).execute(program_id=program_id)
+    assert program is not None
+    return ProgramOut(id=program.id, code=program.code, name=program.name,
+                        semester_count=program.semester_count, is_active=program.is_active,
+                        course_count=program.course_count)
+
+
 @router.post("/courses", status_code=status.HTTP_201_CREATED, response_model=CourseOut)
 async def create_course(payload: CourseIn, repository: RepoDep) -> CourseOut:
     try:
@@ -102,6 +132,24 @@ async def create_course(payload: CourseIn, repository: RepoDep) -> CourseOut:
         area=course.area,
         default_credits=course.default_credits,
     )
+
+
+@router.patch("/courses/{course_id}", response_model=CourseOut)
+async def update_course(course_id: int, payload: CourseIn, repository: RepoDep) -> CourseOut:
+    try:
+        course = await UpdateCourse(repository).execute(
+            course_id=course_id, code=payload.code, name=payload.name, area=payload.area,
+            default_credits=payload.default_credits, description=payload.description,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    assert course.id is not None
+    return CourseOut(id=course.id, code=course.code, name=course.name, area=course.area,
+                       default_credits=course.default_credits)
 
 
 @router.get("/courses", response_model=list[CourseWithUsageOut])

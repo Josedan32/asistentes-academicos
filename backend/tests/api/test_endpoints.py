@@ -387,3 +387,48 @@ async def test_admin_courses_endpoint_reports_placements(client: AsyncClient) ->
     assert len(body["BD1"]["placements"]) == 1
     assert body["BD1"]["placements"][0]["program_code"] == "ISW"
     assert body[unassigned.json()["code"]]["placements"] == []
+
+
+async def test_editing_a_program(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    response = await client.patch(
+        f"/api/v1/admin/programs/{program.json()['id']}",
+        json={"code": "ISW", "name": "Ingenieria de Software", "semester_count": 10,
+              "is_active": False},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["name"] == "Ingenieria de Software"
+    assert response.json()["is_active"] is False
+
+
+async def test_editing_a_course(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    course = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD1", "name": "Base de Datos 1", "area": "Datos", "default_credits": 3},
+        headers=headers,
+    )
+    response = await client.patch(
+        f"/api/v1/admin/courses/{course.json()['id']}",
+        json={"code": "BD1", "name": "Base de Datos I", "area": "Datos", "default_credits": 4},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["default_credits"] == 4
+
+
+async def test_editing_requires_coordination(client: AsyncClient) -> None:
+    response = await client.patch(
+        "/api/v1/admin/programs/1",
+        json={"code": "X", "name": "X", "semester_count": 1, "is_active": True},
+        headers={"Authorization": f"Bearer {issue_token('student')}"},
+    )
+    assert response.status_code == 403

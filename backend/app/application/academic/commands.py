@@ -44,6 +44,32 @@ class CreateCourse:
 
 
 @dataclass
+class UpdateProgram:
+    repository: AcademicRepository
+
+    async def execute(
+        self, *, program_id: int, code: str, name: str, semester_count: int, is_active: bool
+    ) -> Program:
+        program = Program(id=program_id, code=code.strip().upper(), name=name.strip(),
+                            semester_count=semester_count, is_active=is_active)
+        return await self.repository.update_program(program)
+
+
+@dataclass
+class UpdateCourse:
+    repository: AcademicRepository
+
+    async def execute(
+        self, *, course_id: int, code: str, name: str, area: str, default_credits: int,
+        description: str = "",
+    ) -> Course:
+        course = Course(id=course_id, code=code.strip().upper(), name=name.strip(),
+                          area=area.strip(), default_credits=default_credits,
+                          description=description.strip())
+        return await self.repository.update_course(course)
+
+
+@dataclass
 class AssignCourseToCurriculum:
     repository: AcademicRepository
 

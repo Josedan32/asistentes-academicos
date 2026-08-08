@@ -61,6 +61,32 @@ class SqlAlchemyAcademicRepository:
             description=model.description,
         )
 
+    async def update_program(self, program: Program) -> Program:
+        assert program.id is not None, "update_program requires a persisted program"
+        model = await self._session.get(ProgramModel, program.id)
+        if model is None:
+            raise LookupError(f"program {program.id} does not exist")
+        model.code = program.code
+        model.name = program.name
+        model.semester_count = program.semester_count
+        model.is_active = program.is_active
+        await self._session.commit()
+        return program
+
+    async def update_course(self, course: Course) -> Course:
+        assert course.id is not None, "update_course requires a persisted course"
+        model = await self._session.get(CourseModel, course.id)
+        if model is None:
+            raise LookupError(f"course {course.id} does not exist")
+        model.code = course.code
+        model.name = course.name
+        model.normalized_name = normalize_name(course.name)
+        model.area = course.area
+        model.default_credits = course.default_credits
+        model.description = course.description
+        await self._session.commit()
+        return course
+
     async def course_exists(self, course_id: int) -> bool:
         found = await self._session.get(CourseModel, course_id)
         return found is not None
