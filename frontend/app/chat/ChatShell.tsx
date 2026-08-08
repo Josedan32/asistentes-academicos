@@ -30,6 +30,10 @@ export function ChatShell({
 
   useEffect(() => {
     if (initialConversationId === null) return;
+    // Already have this exact conversation in memory — e.g. we just sent the first message of a
+    // new conversation and the URL-sync effect below replaced /chat with /chat/{id}. Refetching
+    // here would discard the in-flight state for no reason.
+    if (stream.conversationId === initialConversationId) return;
     let cancelled = false;
     getConversation(initialConversationId).then((detail) => {
       if (cancelled) return;
@@ -48,6 +52,16 @@ export function ChatShell({
     // on every state change this same effect causes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialConversationId]);
+
+  useEffect(() => {
+    // A brand-new conversation (started from the bare /chat route) just got its first real,
+    // persisted id from the backend's `done` event. Sync the URL to /chat/{id} so a reload — or
+    // sharing the link — doesn't lose it; the conversation itself was already saved server-side
+    // the whole time, only the browser's address bar was stale.
+    if (initialConversationId === null && stream.conversationId !== null) {
+      router.replace(`/chat/${stream.conversationId}`);
+    }
+  }, [initialConversationId, stream.conversationId, router]);
 
   function handleSelectAssistant(next: ActiveAssistant) {
     stream.reset();

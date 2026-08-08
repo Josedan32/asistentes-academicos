@@ -1,5 +1,6 @@
 "use client";
 
+import { Settings2 } from "lucide-react";
 import type { ErrorInfo, QueuedInfo, RunState } from "@/lib/hooks/useChatStream";
 
 const QUEUE_POSITION_LABELS: Record<number, string> = {
@@ -41,7 +42,7 @@ export function StatusBanner({
     return (
       <div className="flex items-center gap-3 rounded-card-lg border border-tool-border
                        bg-tool-bg p-[12px_14px]">
-        <span className="animate-pulse text-[14px] text-accent">⚙</span>
+        <Settings2 className="h-[14px] w-[14px] flex-none animate-pulse text-accent" />
         <div className="flex-1">
           <div className="text-[13.5px] font-semibold text-navy">
             Usando herramienta ·{" "}

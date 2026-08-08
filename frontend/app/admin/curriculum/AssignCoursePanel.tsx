@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,10 +87,10 @@ export function AssignCoursePanel({
                   {program.name} · semestre {targetSemester}
                 </div>
               </div>
-              <button onClick={onClose}
+              <button onClick={onClose} aria-label="Cerrar"
                       className="flex h-[30px] w-[30px] items-center justify-center
-                                 rounded-[7px] border border-border text-[14px] text-text-secondary">
-                ✕
+                                 rounded-[7px] border border-border text-text-secondary">
+                <X className="h-[14px] w-[14px]" />
               </button>
             </div>
 
@@ -239,11 +240,12 @@ export function AssignCoursePanel({
                                 className="flex items-center gap-[7px] rounded-pill bg-navy
                                            px-[11px] py-[5px] text-[13px] font-medium text-white">
                             {course.course_name}
-                            <span className="cursor-pointer opacity-60"
+                            <span className="cursor-pointer opacity-60 hover:opacity-100"
+                                  role="button" aria-label={`Quitar ${course.course_name}`}
                                   onClick={() =>
                                     setPrerequisiteIds((prev) => prev.filter((p) => p !== id))
                                   }>
-                              ✕
+                              <X className="h-3 w-3" />
                             </span>
                           </span>
                         );

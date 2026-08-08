@@ -1,10 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { LogOut } from "lucide-react";
 import { getMe } from "@/lib/api/me";
 import { listConversations } from "@/lib/api/conversations";
 import { listCurriculum } from "@/lib/api/programs";
 import { relativeDate } from "@/lib/relative-date";
+import { useAuth } from "@/lib/hooks/useAuth";
 import type { ActiveAssistant } from "@/lib/assistant-identity";
 
 interface SidebarProps {
@@ -19,6 +22,8 @@ export function Sidebar({
   activeAssistant, onSelectAssistant, onNewConversation, activeConversationId,
   onSelectConversation,
 }: SidebarProps) {
+  const router = useRouter();
+  const { logout } = useAuth();
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
   const curriculumQuery = useQuery({
     queryKey: ["curriculum", meQuery.data?.program_id, meQuery.data?.current_semester],
@@ -144,6 +149,18 @@ export function Sidebar({
               `${meQuery.data.current_semester}` : ""}
           </div>
         </div>
+        <button
+          onClick={() => {
+            logout();
+            router.push("/login");
+          }}
+          title="Cerrar sesión"
+          aria-label="Cerrar sesión"
+          className="flex h-8 w-8 flex-none items-center justify-center rounded-[7px]
+                     text-accent-muted hover:bg-navy-hover hover:text-white"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
