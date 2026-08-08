@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -79,3 +81,14 @@ class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: str
+
+
+class ChatIn(BaseModel):
+    conversation_id: int | None = None
+    course_id: int | None = None
+    message: str = Field(min_length=1, max_length=2000)
+
+
+class FeedbackIn(BaseModel):
+    value: Literal["up", "down"]
+    comment: str | None = Field(default=None, max_length=500)

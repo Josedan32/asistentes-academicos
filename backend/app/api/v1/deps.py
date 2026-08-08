@@ -3,13 +3,22 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.agents.ports import LLMProvider
 from app.infrastructure.config import get_settings
+from app.infrastructure.llm.caching_provider import CachingLLMProvider
+from app.infrastructure.llm.ollama_provider import OllamaProvider
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
+from app.infrastructure.persistence.conversation_reader import SqlAlchemyConversationReader
+from app.infrastructure.persistence.conversation_repository import SqlAlchemyConversationRepository
 from app.infrastructure.persistence.session import get_session
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
+from app.infrastructure.prompts.composer import TemplatePromptComposer
+from app.infrastructure.redis.inference_gate import RedisInferenceGate
+from app.infrastructure.redis.response_cache import RedisResponseCache
 from app.infrastructure.security.hasher import Argon2Hasher
 from app.infrastructure.security.tokens import JwtTokenIssuer
 
@@ -80,3 +89,57 @@ def require_coordination(
             status_code=status.HTTP_403_FORBIDDEN, detail="Coordination role required"
         )
     return user
+
+
+def require_student(
+    user: Annotated[CurrentUser, Depends(require_authentication)],
+) -> CurrentUser:
+    if user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Student role required"
+        )
+    return user
+
+
+def get_conversation_repository(session: SessionDep) -> SqlAlchemyConversationRepository:
+    return SqlAlchemyConversationRepository(session)
+
+
+def get_conversation_reader(session: SessionDep) -> SqlAlchemyConversationReader:
+    return SqlAlchemyConversationReader(session)
+
+
+@lru_cache
+def get_redis_client() -> Redis:
+    return Redis.from_url(get_settings().redis_url)
+
+
+def get_inference_gate(redis: Annotated[Redis, Depends(get_redis_client)]) -> RedisInferenceGate:
+    return RedisInferenceGate(redis)
+
+
+@lru_cache
+def get_llm_provider() -> LLMProvider:
+    settings = get_settings()
+    ollama = OllamaProvider(
+        base_url=settings.ollama_base_url, model=settings.ollama_model,
+        num_ctx=settings.ollama_num_ctx, keep_alive=settings.ollama_keep_alive,
+    )
+    cache = RedisResponseCache(Redis.from_url(settings.redis_url))
+    return CachingLLMProvider(inner=ollama, cache=cache, ttl_seconds=300)
+
+
+@lru_cache
+def get_prompt_composer() -> TemplatePromptComposer:
+    return TemplatePromptComposer()
+
+
+ConversationRepositoryDep = Annotated[
+    SqlAlchemyConversationRepository, Depends(get_conversation_repository)
+]
+ConversationReaderDep = Annotated[SqlAlchemyConversationReader, Depends(get_conversation_reader)]
+InferenceGateDep = Annotated[RedisInferenceGate, Depends(get_inference_gate)]
+LLMProviderDep = Annotated[LLMProvider, Depends(get_llm_provider)]
+PromptComposerDep = Annotated[TemplatePromptComposer, Depends(get_prompt_composer)]
+AcademicReaderDep = Annotated[SqlAlchemyAcademicReader, Depends(get_academic_reader)]
+UserRepositoryDep = Annotated[SqlAlchemyUserRepository, Depends(get_user_repository)]
