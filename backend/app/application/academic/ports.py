@@ -3,6 +3,7 @@ from typing import Protocol
 from app.application.academic.dto import (
     CourseDetail,
     CourseSummary,
+    CourseWithUsage,
     CurriculumBoardEntry,
     PrerequisiteView,
     ProgramPlacement,
@@ -51,3 +52,5 @@ class AcademicReader(Protocol):
     async def placements_of(self, course_id: int) -> list[ProgramPlacement]: ...
 
     async def curriculum_board(self, program_id: int) -> list[CurriculumBoardEntry]: ...
+
+    async def list_courses(self) -> list[CourseWithUsage]: ...

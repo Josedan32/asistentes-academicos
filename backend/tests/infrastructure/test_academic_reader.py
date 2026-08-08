@@ -10,6 +10,7 @@ from app.application.academic.queries import (
     GetCurriculumBoard,
     GetPrerequisites,
     GetProgram,
+    ListCourses,
     ListSemesterCourses,
 )
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
@@ -191,3 +192,16 @@ async def test_curriculum_board_lists_every_semester_with_prerequisites_and_shar
     bd1 = next(entry for entry in board if entry.course_code == "BD1")
     assert bd1.prerequisites == []
     assert bd1.shared_program_count == 1
+
+
+async def test_lists_every_course_with_its_program_placements(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    courses = await ListCourses(reader).execute()
+    assert {c.code for c in courses} == {"BD1", "BD2"}
+
+    bd2 = next(c for c in courses if c.code == "BD2")
+    assert {p.program_code for p in bd2.placements} == {"ISW", "IEL"}
+
+    bd1 = next(c for c in courses if c.code == "BD1")
+    assert [p.program_code for p in bd1.placements] == ["ISW"]

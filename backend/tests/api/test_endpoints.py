@@ -355,3 +355,35 @@ async def test_curriculum_board_returns_all_semesters_at_once(client: AsyncClien
     bd2 = next(row for row in body if row["course_code"] == "BD2")
     assert bd2["prerequisites"][0]["course_code"] == "BD1"
     assert bd2["shared_program_count"] == 1
+
+
+async def test_admin_courses_endpoint_reports_placements(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    course = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD1", "name": "Base de Datos 1", "area": "Datos", "default_credits": 3},
+        headers=headers,
+    )
+    unassigned = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "ARQ", "name": "Arquitectura", "area": "Software", "default_credits": 4},
+        headers=headers,
+    )
+    await client.post(
+        f"/api/v1/admin/programs/{program.json()['id']}/curriculum",
+        json={"course_id": course.json()["id"], "semester": 3, "credits": 3},
+        headers=headers,
+    )
+
+    response = await client.get("/api/v1/admin/courses", headers=headers)
+    assert response.status_code == 200
+    body = {row["code"]: row for row in response.json()}
+    assert len(body["BD1"]["placements"]) == 1
+    assert body["BD1"]["placements"][0]["program_code"] == "ISW"
+    assert body[unassigned.json()["code"]]["placements"] == []

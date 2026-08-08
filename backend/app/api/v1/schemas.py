@@ -79,6 +79,23 @@ class CurriculumBoardEntryOut(BaseModel):
     shared_program_count: int
 
 
+class CoursePlacementOut(BaseModel):
+    program_id: int
+    program_code: str
+    program_name: str
+    semester: int
+    credits: int
+
+
+class CourseWithUsageOut(BaseModel):
+    id: int
+    code: str
+    name: str
+    area: str
+    default_credits: int
+    placements: list[CoursePlacementOut]
+
+
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)

@@ -73,3 +73,13 @@ class CurriculumBoardEntry:
     credits: int
     prerequisites: list[CurriculumBoardPrerequisite]
     shared_program_count: int
+
+
+@dataclass(frozen=True)
+class CourseWithUsage:
+    id: int
+    code: str
+    name: str
+    area: str
+    default_credits: int
+    placements: list[ProgramPlacement]

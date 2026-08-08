@@ -10,6 +10,8 @@ from app.api.v1.deps import (
 from app.api.v1.schemas import (
     CourseIn,
     CourseOut,
+    CoursePlacementOut,
+    CourseWithUsageOut,
     CurriculumAssignmentIn,
     CurriculumBoardEntryOut,
     CurriculumBoardPrerequisiteOut,
@@ -24,7 +26,7 @@ from app.application.academic.commands import (
     CreateProgram,
     MoveCourseToSemester,
 )
-from app.application.academic.queries import GetCurriculumBoard, ListPrograms
+from app.application.academic.queries import GetCurriculumBoard, ListCourses, ListPrograms
 from app.domain.academic.exceptions import AcademicError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
@@ -100,6 +102,24 @@ async def create_course(payload: CourseIn, repository: RepoDep) -> CourseOut:
         area=course.area,
         default_credits=course.default_credits,
     )
+
+
+@router.get("/courses", response_model=list[CourseWithUsageOut])
+async def list_courses(reader: ReaderDep) -> list[CourseWithUsageOut]:
+    rows = await ListCourses(reader).execute()
+    return [
+        CourseWithUsageOut(
+            id=r.id, code=r.code, name=r.name, area=r.area,
+            default_credits=r.default_credits,
+            placements=[
+                CoursePlacementOut(program_id=p.program_id, program_code=p.program_code,
+                                     program_name=p.program_name, semester=p.semester,
+                                     credits=p.credits)
+                for p in r.placements
+            ],
+        )
+        for r in rows
+    ]
 
 
 @router.post(

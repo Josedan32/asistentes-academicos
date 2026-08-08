@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from app.application.academic.dto import (
     CourseDetail,
     CourseSummary,
+    CourseWithUsage,
     CurriculumBoardEntry,
     PrerequisiteResult,
     ProgramPlacement,
@@ -86,3 +87,11 @@ class GetCurriculumBoard:
 
     async def execute(self, *, program_id: int) -> list[CurriculumBoardEntry]:
         return await self.reader.curriculum_board(program_id)
+
+
+@dataclass
+class ListCourses:
+    reader: AcademicReader
+
+    async def execute(self) -> list[CourseWithUsage]:
+        return await self.reader.list_courses()

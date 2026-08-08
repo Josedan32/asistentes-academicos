@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.academic.dto import (
     CourseDetail,
     CourseSummary,
+    CourseWithUsage,
     CurriculumBoardEntry,
     CurriculumBoardPrerequisite,
     PrerequisiteView,
@@ -212,3 +213,18 @@ class SqlAlchemyAcademicReader:
                 )
             )
         return entries
+
+    async def list_courses(self) -> list[CourseWithUsage]:
+        courses = (
+            (await self._session.execute(select(CourseModel).order_by(CourseModel.name)))
+            .scalars()
+            .all()
+        )
+        return [
+            CourseWithUsage(
+                id=course.id, code=course.code, name=course.name, area=course.area,
+                default_credits=course.default_credits,
+                placements=await self.placements_of(course.id),
+            )
+            for course in courses
+        ]
