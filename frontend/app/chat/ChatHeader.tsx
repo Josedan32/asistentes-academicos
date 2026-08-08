@@ -2,9 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getMe, getChatModel } from "@/lib/api/me";
-import { assistantInitials, assistantTitle, type ActiveAssistant } from "@/lib/assistant-identity";
+import { assistantTitle, type ActiveAssistant } from "@/lib/assistant-identity";
+import { robotStateFor } from "@/lib/robot-state";
+import type { RunState } from "@/lib/hooks/useChatStream";
+import { AssistantAvatar } from "./AssistantAvatar";
 
-export function ChatHeader({ activeAssistant }: { activeAssistant: ActiveAssistant }) {
+export function ChatHeader({
+  activeAssistant, runState = "idle",
+}: {
+  activeAssistant: ActiveAssistant;
+  runState?: RunState;
+}) {
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
   const modelQuery = useQuery({ queryKey: ["chat-model"], queryFn: getChatModel });
 
@@ -16,10 +24,7 @@ export function ChatHeader({ activeAssistant }: { activeAssistant: ActiveAssista
     <div className="flex h-[66px] flex-none items-center justify-between gap-4 border-b
                      border-border bg-surface px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-[34px] w-[34px] flex-none items-center justify-center
-                         rounded-control bg-navy text-[13px] font-semibold text-white">
-          {assistantInitials(activeAssistant)}
-        </div>
+        <AssistantAvatar state={robotStateFor(runState)} size={34} />
         <div className="min-w-0">
           <div className="text-[15px] font-semibold leading-[1.2] text-navy">
             {assistantTitle(activeAssistant)}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="64" height="64">
+  <ellipse cx="50" cy="92" rx="20" ry="4" fill="#1C2D42" opacity="0.15"/>
+  <path d="M 50 29 Q 44 22 46 17" fill="none" stroke="#1C2D42" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 46 17 C 43 14 41 18 46 22 C 51 18 49 14 46 17 Z" fill="#3AAFA9" stroke="#1C2D42" stroke-width="2"/>
+  <text x="68" y="24" fill="#3AAFA9" font-family="sans-serif" font-weight="bold" font-size="10">z</text>
+  <text x="75" y="16" fill="#3AAFA9" font-family="sans-serif" font-weight="bold" font-size="13">Z</text>
+  <rect x="22" y="42" width="8" height="14" rx="4" fill="#D2E8E3" stroke="#1C2D42" stroke-width="3"/>
+  <rect x="70" y="42" width="8" height="14" rx="4" fill="#D2E8E3" stroke="#1C2D42" stroke-width="3"/>
+  <rect x="26" y="28" width="48" height="40" rx="18" fill="#FFFFFF" stroke="#1C2D42" stroke-width="3.5"/>
+  <rect x="31" y="34" width="38" height="28" rx="12" fill="#1C2D42"/>
+  <circle cx="41" cy="48" r="3.5" fill="#3AAFA9"/>
+  <circle cx="59" cy="48" r="3.5" fill="#3AAFA9"/>
+  <path d="M 34 66 C 34 64 66 64 66 66 L 62 84 C 62 88 38 88 38 84 Z" fill="#E8F4F8" stroke="#1C2D42" stroke-width="3.5"/>
+  <rect x="42" y="70" width="16" height="10" rx="4" fill="#3AAFA9" stroke="#1C2D42" stroke-width="2"/>
+  <ellipse cx="36" cy="86" rx="6" ry="4" fill="#FFFFFF" stroke="#1C2D42" stroke-width="2.5"/>
+  <ellipse cx="64" cy="86" rx="6" ry="4" fill="#FFFFFF" stroke="#1C2D42" stroke-width="2.5"/>
+</svg>

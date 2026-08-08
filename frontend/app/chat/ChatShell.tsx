@@ -7,7 +7,7 @@ import { useRequireRole } from "@/lib/hooks/useRequireRole";
 import { useChatStream } from "@/lib/hooks/useChatStream";
 import { getMe } from "@/lib/api/me";
 import { getConversation } from "@/lib/api/conversations";
-import { assistantInitials, type ActiveAssistant } from "@/lib/assistant-identity";
+import type { ActiveAssistant } from "@/lib/assistant-identity";
 import { Sidebar } from "./Sidebar";
 import { ChatHeader } from "./ChatHeader";
 import { MessageThread } from "./MessageThread";
@@ -88,13 +88,14 @@ export function ChatShell({
         onSelectConversation={handleSelectConversation}
       />
       <div className="flex min-h-0 min-w-0 flex-col bg-app-bg">
-        <ChatHeader activeAssistant={activeAssistant} />
+        <ChatHeader activeAssistant={activeAssistant} runState={stream.runState} />
 
         <div className="flex-1 overflow-auto py-7">
           <div className="mx-auto flex max-w-[800px] flex-col gap-[22px] px-6">
             <MessageThread
               messages={stream.messages}
-              assistantInitials={assistantInitials(activeAssistant)}
+              activeAssistant={activeAssistant}
+              runState={stream.runState}
               studentFirstName={meQuery.data?.first_name ?? ""}
               onSuggestedQuestion={(text) => stream.send(text)}
               feedbackSlot={(message) => (
