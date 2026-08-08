@@ -9,6 +9,7 @@ import { groupBoardBySemester } from "@/lib/group-board-by-semester";
 import { computeDragMove } from "@/lib/compute-drag-move";
 import { Button } from "@/components/ui/button";
 import { SemesterColumn } from "./SemesterColumn";
+import { AssignCoursePanel } from "./AssignCoursePanel";
 
 export function CurriculumBoard() {
   const programsQuery = useQuery({ queryKey: ["admin-programs"], queryFn: listPrograms });
@@ -99,8 +100,15 @@ export function CurriculumBoard() {
           </div>
         </div>
 
-        {/* Task D5 replaces this comment with the "Asignar materia" Sheet, driven by
-            `assignSemester` (non-null when open) and `activeProgramId`. */}
+        {assignSemester !== null && activeProgram && (
+          <AssignCoursePanel
+            open
+            program={activeProgram}
+            targetSemester={assignSemester}
+            earlierSemesterCourses={boardQuery.data ?? []}
+            onClose={() => setAssignSemester(null)}
+          />
+        )}
       </div>
     </DndContext>
   );
