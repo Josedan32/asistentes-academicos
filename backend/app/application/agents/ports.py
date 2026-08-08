@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMMessage, LLMResponse, ToolDefinition
 from app.domain.agents.entities import Conversation, Message, MessageFeedback, ToolCall
 
@@ -42,3 +43,9 @@ class LLMProvider(Protocol):
     async def complete(
         self, messages: list[LLMMessage], tools: list[ToolDefinition] | None = None
     ) -> LLMResponse: ...
+
+
+class PromptComposer(Protocol):
+    def compose_system_prompt(self, context: StudentContext) -> tuple[str, str]:
+        """Returns (prompt_text, prompt_version). Every Message records the version."""
+        ...
