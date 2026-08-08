@@ -4,6 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.api.v1 import chat
 from app.api.v1.deps import (
     get_db_session,
     get_inference_gate,
@@ -34,6 +35,33 @@ class ImmediateInferenceGate:
 
     async def release(self, ticket: str) -> None:
         return None
+
+
+class NeverReadyInferenceGate:
+    """Always reports a queue position behind the head, so the poll loop never breaks
+    on its own — used to exercise the `queue_timeout` bound (finding 1)."""
+
+    async def enqueue(self) -> str:
+        return "ticket"
+
+    async def position(self, ticket: str) -> int | None:
+        return 2
+
+    async def release(self, ticket: str) -> None:
+        return None
+
+
+class RaisingIsLoadedProvider:
+    """An LLMProvider whose `is_loaded()` raises, simulating an unreachable Ollama —
+    used to exercise the pre-loop error-event conversion (finding 2)."""
+
+    model = "raising-v1"
+
+    async def is_loaded(self) -> bool:
+        raise RuntimeError("Ollama unreachable")
+
+    async def complete(self, messages, tools=None):
+        raise AssertionError("complete should not be called when is_loaded raises")
 
 
 async def _seed_student(session: AsyncSession) -> tuple[int, int]:
@@ -125,6 +153,47 @@ async def test_chat_with_a_tool_call_streams_thinking_and_tool_call_events(
     assert "thinking" in names
     assert "tool_call" in names
     assert names[-1] == "done"
+
+
+async def test_chat_yields_an_error_event_when_is_loaded_raises_before_streaming(
+    client, session_factory
+) -> None:
+    async with session_factory() as session:
+        user_id, _ = await _seed_student(session)
+    token = get_token_issuer().issue(subject=str(user_id), role="student")
+    app.dependency_overrides[get_llm_provider] = lambda: RaisingIsLoadedProvider()
+
+    response = await client.post(
+        "/api/v1/chat", json={"message": "hola"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    events = _events(response.text)
+    assert events == [
+        ("error", {"code": "agent_loop_failed", "message": "Ollama unreachable"})
+    ]
+
+
+async def test_chat_yields_a_queue_timeout_error_when_the_poll_bound_is_exceeded(
+    client, session_factory, monkeypatch
+) -> None:
+    async with session_factory() as session:
+        user_id, _ = await _seed_student(session)
+    token = get_token_issuer().issue(subject=str(user_id), role="student")
+    monkeypatch.setattr(chat, "QUEUE_POLL_SECONDS", 0.01)
+    monkeypatch.setattr(chat, "MAX_QUEUE_POLL_ITERATIONS", 3)
+    app.dependency_overrides[get_inference_gate] = lambda: NeverReadyInferenceGate()
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(responses=[])
+
+    response = await client.post(
+        "/api/v1/chat", json={"message": "hola"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    events = _events(response.text)
+    names = [name for name, _ in events]
+    assert names[-1] == "error"
+    assert events[-1][1]["code"] == "queue_timeout"
 
 
 async def test_chat_requires_authentication(client) -> None:

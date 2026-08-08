@@ -3,6 +3,7 @@ import json
 from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
+from anyio import CancelScope
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
@@ -26,6 +27,8 @@ router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
 ESTIMATED_SECONDS_PER_TURN = 5
 QUEUE_POLL_SECONDS = 0.5
+MAX_QUEUE_WAIT_SECONDS = 180
+MAX_QUEUE_POLL_ITERATIONS = int(MAX_QUEUE_WAIT_SECONDS / QUEUE_POLL_SECONDS)
 
 
 def _sse(event: str, data: dict[str, Any]) -> bytes:
@@ -73,45 +76,56 @@ async def chat(
 
     async def stream() -> AsyncIterator[bytes]:
         ticket = await gate.enqueue()
+        # Everything from here on must funnel exceptions into an `error` SSE event rather
+        # than propagating: the stream has already started, so a normal HTTP error response
+        # is no longer possible (spec §9.2). This also covers pre-loop failures such as
+        # `provider.is_loaded()` raising (e.g. Ollama unreachable), not just `AgentLoop.run`.
         try:
-            while True:
+            for _ in range(MAX_QUEUE_POLL_ITERATIONS):
                 position = await gate.position(ticket)
                 if position is None or position <= 1:
                     break
                 yield _sse("queued", {"position": position,
                                        "estimated_wait": position * ESTIMATED_SECONDS_PER_TURN})
                 await asyncio.sleep(QUEUE_POLL_SECONDS)
+            else:
+                yield _sse("error", {
+                    "code": "queue_timeout",
+                    "message": "Timed out waiting for the inference queue",
+                })
+                return
 
             if not await provider.is_loaded():
                 yield _sse("loading_model", {})
 
             loop = AgentLoop(provider=provider, reader=reader, conversations=conversations,
                               prompt_composer=prompt_composer)
-            try:
-                async for event in loop.run(conversation=conversation, history=history,
-                                             user_message=payload.message, context=context):
-                    if isinstance(event, ThinkingEvent):
-                        yield _sse("thinking", {"tool": event.tool})
-                    elif isinstance(event, ToolCallEvent):
-                        yield _sse("tool_call", {
-                            "name": event.name, "arguments": event.arguments,
-                            "result": event.result, "duration_ms": event.duration_ms,
-                            "row_count": event.row_count,
-                        })
-                    elif isinstance(event, DoneEvent):
-                        for token in _chunk_into_tokens(event.content):
-                            yield _sse("token", {"text": token})
-                        yield _sse("done", {
-                            "tool_count": event.tool_count, "total_ms": 0, "source_count": 0,
-                            "conversation_id": conversation.id,
-                        })
-            except Exception as error:
-                # The stream has already started, so a normal HTTP error response is no
-                # longer possible — this is the only place a loop failure can still reach
-                # the client, as the `error` event the SSE contract defines (spec §9.2).
-                yield _sse("error", {"code": "agent_loop_failed", "message": str(error)})
+            async for event in loop.run(conversation=conversation, history=history,
+                                         user_message=payload.message, context=context):
+                if isinstance(event, ThinkingEvent):
+                    yield _sse("thinking", {"tool": event.tool})
+                elif isinstance(event, ToolCallEvent):
+                    yield _sse("tool_call", {
+                        "name": event.name, "arguments": event.arguments,
+                        "result": event.result, "duration_ms": event.duration_ms,
+                        "row_count": event.row_count,
+                    })
+                elif isinstance(event, DoneEvent):
+                    for token in _chunk_into_tokens(event.content):
+                        yield _sse("token", {"text": token})
+                    yield _sse("done", {
+                        "tool_count": event.tool_count, "total_ms": 0, "source_count": 0,
+                        "conversation_id": conversation.id,
+                    })
+        except Exception as error:
+            yield _sse("error", {"code": "agent_loop_failed", "message": str(error)})
         finally:
-            await gate.release(ticket)
+            # Shielded: on client disconnect the ASGI server may cancel this task group
+            # outright, and an unshielded `await` here would raise at its first checkpoint
+            # before the Redis ZREM runs — leaking the ticket and blocking every other
+            # queued request behind it, since RedisInferenceGate sets no TTL on entries.
+            with CancelScope(shield=True):
+                await gate.release(ticket)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 
