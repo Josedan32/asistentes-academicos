@@ -87,8 +87,7 @@ async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(
     reader, program_id = await _seed_reader(session)
     provider = FakeLLMProvider(responses=[
         LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses",
-                             arguments={"program_id": program_id, "semester": 4})
+            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
         ]),
         LLMResponse(content="Tienes 1 materia."),
     ])
@@ -119,7 +118,7 @@ async def test_invalid_arguments_return_a_tool_error_to_the_model_not_an_excepti
     provider = FakeLLMProvider(responses=[
         LLMResponse(content=None, tool_calls=[
             ToolCallRequest(id="1", name="list_semester_courses",
-                             arguments={"program_id": "not-an-int", "semester": 4})
+                             arguments={"semester": "not-an-int"})
         ]),
         LLMResponse(content="No pude procesar tu solicitud."),
     ])
@@ -164,8 +163,7 @@ async def test_hitting_the_iteration_cap_is_recorded_and_stops_calling_the_provi
 ) -> None:
     reader, program_id = await _seed_reader(session)
     always_calls_a_tool = LLMResponse(content=None, tool_calls=[
-        ToolCallRequest(id="1", name="list_semester_courses",
-                         arguments={"program_id": program_id, "semester": 4})
+        ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
     ])
     provider = FakeLLMProvider(
         responses=[always_calls_a_tool, always_calls_a_tool, always_calls_a_tool]

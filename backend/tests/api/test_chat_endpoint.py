@@ -178,8 +178,7 @@ async def test_chat_with_a_tool_call_streams_thinking_and_tool_call_events(
     token = get_token_issuer().issue(subject=str(user_id), role="student")
     app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(responses=[
         LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses",
-                             arguments={"program_id": program_id, "semester": 4})
+            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
         ]),
         LLMResponse(content="Tienes 1 materia."),
     ])

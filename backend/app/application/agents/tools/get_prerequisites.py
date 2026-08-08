@@ -1,3 +1,9 @@
+"""program_id is deliberately absent from GetPrerequisitesArgs: the same identity-injection
+principle as get_course_detail (spec §7.5, ADR 0008). It is injected server-side from the
+authenticated student's profile rather than asked of the model, because the 3B model does
+not reliably pull it out of the system prompt on its own — observed in production as the
+model asking the student to supply their own program id instead of answering."""
+
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import PrerequisiteResult
@@ -6,18 +12,19 @@ from app.application.academic.queries import GetPrerequisites
 from app.application.agents.llm_types import ToolDefinition
 from app.application.agents.tools.registry import ToolContext, ToolSpec
 
-DESCRIPTION = "Get the prerequisites of a course within a program's curriculum."
+DESCRIPTION = "Get the prerequisites of a course within the student's own program curriculum."
 
 
 class GetPrerequisitesArgs(BaseModel):
-    program_id: int = Field(description="Program identifier")
     course: str = Field(description="Course name as the student wrote it")
 
 
 async def _run(
     reader: AcademicReader, args: GetPrerequisitesArgs, context: ToolContext
 ) -> PrerequisiteResult:
-    return await GetPrerequisites(reader).execute(program_id=args.program_id, course=args.course)
+    return await GetPrerequisites(reader).execute(
+        program_id=context.program_id, course=args.course
+    )
 
 
 SPEC = ToolSpec(

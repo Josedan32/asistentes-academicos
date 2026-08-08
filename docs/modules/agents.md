@@ -72,15 +72,19 @@ query handler in the academic module (`ListSemesterCourses`, `GetPrerequisites`,
 `GetCourseDetail`, `FindCourseInPrograms`). Four only: small models degrade past five or
 six tools (ADR 0006). Results never contain student grades or academic status.
 
-`get_course_detail` is the one deviation: its `GetCourseDetailArgs` has no `program_id`
-field, and the JSON schema shown to the model never mentions it (spec §7.4's signature is
-`get_course_detail(course)`). `program_id` is instead read from `ToolContext`, built by
-the loop from the authenticated student's `StudentContext` and passed to every handler —
-the same identity-injection principle spec §7.5 applies to `student_id`, extended here
-because Plan 1 already hit the concrete bug an optional, model-supplied `program_id`
-produces (ADR 0008). Two other tools take `program_id` as a model-generated argument:
-`list_semester_courses` and `get_prerequisites`. `find_course_in_programs` takes no
-`program_id` at all — its whole purpose is searching across programs.
+None of the four tools take `program_id` as a model-generated argument. `get_course_detail`
+was the original deviation (spec §7.4's signature is `get_course_detail(course)`; Plan 1 hit
+the concrete bug an optional, model-supplied `program_id` produces, ADR 0008). Production use
+of `list_semester_courses` and `get_prerequisites` then surfaced the same failure the Plan 1
+spike had flagged as a hypothesis but never confirmed: qwen2.5:3b does not reliably pull
+`program_id` out of the system prompt on its own, and instead asks the student to supply it —
+exactly the "este semestre" abstention pattern the spike measured, one level up. Both tools
+were changed to match `get_course_detail`: `program_id` is read from `ToolContext`, built by
+the loop from the authenticated student's `StudentContext`, never from the model — the same
+identity-injection principle spec §7.5 applies to `student_id`. `semester` on
+`list_semester_courses` stays model-supplied; a student legitimately asks about a semester
+other than their own current one. `find_course_in_programs` takes no `program_id` at all —
+its whole purpose is searching across programs.
 
 ## Persistence
 

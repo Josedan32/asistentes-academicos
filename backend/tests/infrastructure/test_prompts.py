@@ -4,14 +4,22 @@ from app.application.agents.dto import StudentContext
 from app.infrastructure.prompts.composer import PROMPT_VERSION, TemplatePromptComposer
 
 
-def test_interpolates_program_and_semester() -> None:
+def test_interpolates_semester() -> None:
     composer = TemplatePromptComposer()
     prompt, version = composer.compose_system_prompt(
         StudentContext(program_id=1, current_semester=4)
     )
-    assert "program_id=1" in prompt
     assert "semestre 4" in prompt
     assert version == PROMPT_VERSION
+
+
+def test_never_exposes_program_id_to_the_model() -> None:
+    """qwen2.5:3b does not reliably pull program_id out of the system prompt and instead
+    asks the student for it (observed in production) — the prompt no longer mentions it at
+    all, matching every tool now injecting it server-side instead."""
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(StudentContext(program_id=1, current_semester=4))
+    assert "program_id" not in prompt
 
 
 def test_includes_the_active_course_when_present() -> None:
