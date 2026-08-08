@@ -11,6 +11,8 @@ from app.api.v1.schemas import (
     CourseIn,
     CourseOut,
     CurriculumAssignmentIn,
+    CurriculumBoardEntryOut,
+    CurriculumBoardPrerequisiteOut,
     CurriculumEntryOut,
     CurriculumMoveIn,
     ProgramIn,
@@ -22,7 +24,7 @@ from app.application.academic.commands import (
     CreateProgram,
     MoveCourseToSemester,
 )
-from app.application.academic.queries import ListPrograms
+from app.application.academic.queries import GetCurriculumBoard, ListPrograms
 from app.domain.academic.exceptions import AcademicError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
@@ -131,6 +133,33 @@ async def assign_course(
         credits=entry.credits,
         prerequisite_course_ids=list(entry.prerequisite_course_ids),
     )
+
+
+@router.get(
+    "/programs/{program_id}/curriculum",
+    response_model=list[CurriculumBoardEntryOut],
+)
+async def get_curriculum_board(
+    program_id: int, reader: ReaderDep
+) -> list[CurriculumBoardEntryOut]:
+    rows = await GetCurriculumBoard(reader).execute(program_id=program_id)
+    return [
+        CurriculumBoardEntryOut(
+            course_id=r.course_id,
+            course_code=r.course_code,
+            course_name=r.course_name,
+            semester=r.semester,
+            credits=r.credits,
+            prerequisites=[
+                CurriculumBoardPrerequisiteOut(
+                    course_id=p.course_id, course_code=p.course_code, course_name=p.course_name
+                )
+                for p in r.prerequisites
+            ],
+            shared_program_count=r.shared_program_count,
+        )
+        for r in rows
+    ]
 
 
 @router.patch(

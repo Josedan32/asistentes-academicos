@@ -63,6 +63,22 @@ class SemesterCourseOut(BaseModel):
     semester: int
 
 
+class CurriculumBoardPrerequisiteOut(BaseModel):
+    course_id: int
+    course_code: str
+    course_name: str
+
+
+class CurriculumBoardEntryOut(BaseModel):
+    course_id: int
+    course_code: str
+    course_name: str
+    semester: int
+    credits: int
+    prerequisites: list[CurriculumBoardPrerequisiteOut]
+    shared_program_count: int
+
+
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)

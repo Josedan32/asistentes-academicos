@@ -315,3 +315,43 @@ async def test_chat_model_endpoint_reports_the_configured_model(client: AsyncCli
     response = await client.get("/api/v1/chat/model", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json()["model"]
+
+
+async def test_curriculum_board_returns_all_semesters_at_once(client: AsyncClient) -> None:
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    program_id = program.json()["id"]
+    first = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD1", "name": "Base de Datos 1", "area": "Datos", "default_credits": 3},
+        headers=headers,
+    )
+    second = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD2", "name": "Base de Datos 2", "area": "Datos", "default_credits": 4},
+        headers=headers,
+    )
+    await client.post(
+        f"/api/v1/admin/programs/{program_id}/curriculum",
+        json={"course_id": first.json()["id"], "semester": 1, "credits": 3},
+        headers=headers,
+    )
+    await client.post(
+        f"/api/v1/admin/programs/{program_id}/curriculum",
+        json={"course_id": second.json()["id"], "semester": 4, "credits": 4,
+              "prerequisite_course_ids": [first.json()["id"]]},
+        headers=headers,
+    )
+
+    response = await client.get(f"/api/v1/admin/programs/{program_id}/curriculum", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert [row["semester"] for row in body] == [1, 4]
+    bd2 = next(row for row in body if row["course_code"] == "BD2")
+    assert bd2["prerequisites"][0]["course_code"] == "BD1"
+    assert bd2["shared_program_count"] == 1

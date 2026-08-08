@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.academic.dto import (
     CourseDetail,
     CourseSummary,
+    CurriculumBoardEntry,
+    CurriculumBoardPrerequisite,
     PrerequisiteView,
     ProgramPlacement,
     ProgramSummary,
@@ -168,3 +170,45 @@ class SqlAlchemyAcademicReader:
             )
             for program, entry in rows
         ]
+
+    async def curriculum_board(self, program_id: int) -> list[CurriculumBoardEntry]:
+        statement = (
+            select(CourseModel, CurriculumEntryModel)
+            .join(CurriculumEntryModel, CurriculumEntryModel.course_id == CourseModel.id)
+            .where(CurriculumEntryModel.program_id == program_id)
+            .order_by(CurriculumEntryModel.semester, CourseModel.name)
+        )
+        rows = (await self._session.execute(statement)).all()
+
+        entries: list[CurriculumBoardEntry] = []
+        for course, entry in rows:
+            prereq_statement = (
+                select(CourseModel)
+                .join(
+                    PrerequisiteModel,
+                    PrerequisiteModel.required_course_id == CourseModel.id,
+                )
+                .where(PrerequisiteModel.curriculum_entry_id == entry.id)
+                .order_by(CourseModel.name)
+            )
+            prereq_rows = (
+                (await self._session.execute(prereq_statement)).scalars().all()
+            )
+            placements = await self.placements_of(course.id)
+            entries.append(
+                CurriculumBoardEntry(
+                    course_id=course.id,
+                    course_code=course.code,
+                    course_name=course.name,
+                    semester=entry.semester,
+                    credits=entry.credits,
+                    prerequisites=[
+                        CurriculumBoardPrerequisite(
+                            course_id=r.id, course_code=r.code, course_name=r.name
+                        )
+                        for r in prereq_rows
+                    ],
+                    shared_program_count=len(placements),
+                )
+            )
+        return entries

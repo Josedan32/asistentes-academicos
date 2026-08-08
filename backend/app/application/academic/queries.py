@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from app.application.academic.dto import (
     CourseDetail,
     CourseSummary,
+    CurriculumBoardEntry,
     PrerequisiteResult,
     ProgramPlacement,
     ProgramSummary,
@@ -77,3 +78,11 @@ class FindCourseInPrograms:
         if not isinstance(resolution, Resolved):
             return []
         return await self.reader.placements_of(resolution.course_id)
+
+
+@dataclass
+class GetCurriculumBoard:
+    reader: AcademicReader
+
+    async def execute(self, *, program_id: int) -> list[CurriculumBoardEntry]:
+        return await self.reader.curriculum_board(program_id)

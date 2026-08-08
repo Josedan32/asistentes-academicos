@@ -7,6 +7,7 @@ from app.application.academic.dto import PrerequisiteResult, PrerequisiteView
 from app.application.academic.queries import (
     FindCourseInPrograms,
     GetCourseDetail,
+    GetCurriculumBoard,
     GetPrerequisites,
     GetProgram,
     ListSemesterCourses,
@@ -173,3 +174,20 @@ async def test_get_program_returns_none_for_unknown_id(
     reader: SqlAlchemyAcademicReader,
 ) -> None:
     assert await GetProgram(reader).execute(program_id=999) is None
+
+
+async def test_curriculum_board_lists_every_semester_with_prerequisites_and_sharing(
+    reader: SqlAlchemyAcademicReader,
+) -> None:
+    board = await GetCurriculumBoard(reader).execute(program_id=1)
+    assert [entry.course_code for entry in board] == ["BD1", "BD2"]
+
+    bd2 = next(entry for entry in board if entry.course_code == "BD2")
+    assert bd2.semester == 4
+    assert bd2.credits == 4
+    assert [p.course_code for p in bd2.prerequisites] == ["BD1"]
+    assert bd2.shared_program_count == 2  # ISW + IEL both curriculum-place BD2
+
+    bd1 = next(entry for entry in board if entry.course_code == "BD1")
+    assert bd1.prerequisites == []
+    assert bd1.shared_program_count == 1

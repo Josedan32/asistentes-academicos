@@ -55,3 +55,21 @@ class ProgramPlacement:
     program_name: str
     semester: int
     credits: int
+
+
+@dataclass(frozen=True)
+class CurriculumBoardPrerequisite:
+    course_id: int
+    course_code: str
+    course_name: str
+
+
+@dataclass(frozen=True)
+class CurriculumBoardEntry:
+    course_id: int
+    course_code: str
+    course_name: str
+    semester: int
+    credits: int
+    prerequisites: list[CurriculumBoardPrerequisite]
+    shared_program_count: int
