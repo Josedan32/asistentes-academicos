@@ -89,6 +89,27 @@ cd backend && SEED_COORDINATION_PASSWORD='Coordinacion#2026' SEED_STUDENT_PASSWO
 
 ---
 
+## Limitación conocida: `current_semester` no rastrea materias individuales
+
+`StudentProfile.current_semester` es un único número autodeclarado en el registro (p. ej.
+"semestre 5"). La barra lateral del chat y `GET /programs/{id}/curriculum?semester=n` muestran
+las materias de **ese número de semestre en la malla**, no las materias que el estudiante
+realmente puede ver según lo que ha aprobado o perdido.
+
+Esto es intencional, no un defecto: el sistema no tiene notas ni historial académico por
+diseño — están fuera de alcance y son datos sensibles bajo la Ley 1581 de 2012 (ver spec
+`docs/superpowers/specs/2026-08-06-academic-assistants-design.md` §7.4). La consecuencia
+observable es la que reportó el dueño del proyecto probando la app: un estudiante que perdió
+una materia igual ve las materias de semestres posteriores, y uno que se adelantó no ve las
+materias que le faltan atrás — porque el sistema no sabe cuáles aprobó, solo en qué número de
+semestre dice estar.
+
+Corregir esto de verdad requiere modelar aprobado/perdido por materia, lo cual reabre
+exactamente la decisión de alcance que el spec cerró explícitamente. No se implementa sin
+decidir esto primero con el dueño del proyecto.
+
+---
+
 ## Why each tool is here
 
 Nothing in this list is here by default. The architectural decisions have their own
