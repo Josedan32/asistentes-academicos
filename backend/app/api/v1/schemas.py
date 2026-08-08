@@ -1,4 +1,5 @@
-from typing import Literal
+from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -109,3 +110,42 @@ class MeOut(BaseModel):
 
 class ModelOut(BaseModel):
     model: str
+
+
+class ToolCallOut(BaseModel):
+    id: int
+    name: str
+    arguments: dict[str, Any]
+    result: Any
+    duration_ms: int
+    row_count: int
+    sequence: int
+
+
+class FeedbackOut(BaseModel):
+    value: str
+    comment: str | None
+
+
+class MessageOut(BaseModel):
+    id: int
+    role: str
+    content: str
+    tool_calls: list[ToolCallOut]
+    feedback: FeedbackOut | None
+
+
+class ConversationSummaryOut(BaseModel):
+    id: int
+    title: str
+    course_id: int | None
+    course_name: str | None
+    created_at: datetime
+
+
+class ConversationDetailOut(BaseModel):
+    id: int
+    title: str
+    course_id: int | None
+    course_name: str | None
+    messages: list[MessageOut]

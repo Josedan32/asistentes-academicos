@@ -15,8 +15,8 @@ from app.infrastructure.persistence.conversation_repository import (
 from app.infrastructure.persistence.models import UserModel
 
 
-async def _seed_user(session: AsyncSession) -> int:
-    user = UserModel(email="ana@pascualbravo.edu.co", password_hash="x", role="student")
+async def _seed_user(session: AsyncSession, email: str = "ana@pascualbravo.edu.co") -> int:
+    user = UserModel(email=email, password_hash="x", role="student")
     session.add(user)
     await session.commit()
     return user.id
@@ -84,3 +84,54 @@ async def test_message_owner_is_none_for_an_unknown_message(session: AsyncSessio
 async def test_get_returns_none_for_an_unknown_conversation(session: AsyncSession) -> None:
     reader = SqlAlchemyConversationReader(session)
     assert await reader.get(999) is None
+
+
+async def test_lists_conversations_for_a_user_most_recent_first(session: AsyncSession) -> None:
+    repository = SqlAlchemyConversationRepository(session)
+    reader = SqlAlchemyConversationReader(session)
+    user_id = await _seed_user(session)
+    other_user_id = await _seed_user(session, email="otro@pascualbravo.edu.co")
+    first = await repository.create(Conversation(user_id=user_id, course_id=None, title="Primera"))
+    second = await repository.create(
+        Conversation(user_id=user_id, course_id=None, title="Segunda")
+    )
+    await repository.create(
+        Conversation(user_id=other_user_id, course_id=None, title="De otro usuario")
+    )
+
+    rows = await reader.list_by_user(user_id)
+    assert [row.title for row in rows] == ["Segunda", "Primera"]
+    assert rows[0].id == second.id
+    assert rows[1].id == first.id
+
+
+async def test_full_history_includes_tool_calls_and_feedback(session: AsyncSession) -> None:
+    repository = SqlAlchemyConversationRepository(session)
+    reader = SqlAlchemyConversationReader(session)
+    user_id = await _seed_user(session)
+    conversation = await repository.create(Conversation(user_id=user_id, course_id=None, title="X"))
+    assert conversation.id is not None
+    await repository.add_message(
+        Message(conversation_id=conversation.id, role=MessageRole.USER, content="hola")
+    )
+    assistant_message = await repository.add_message(
+        Message(conversation_id=conversation.id, role=MessageRole.ASSISTANT, content="respuesta")
+    )
+    assert assistant_message.id is not None
+    await repository.add_tool_call(
+        ToolCall(message_id=assistant_message.id, name="get_prerequisites", arguments={"a": 1},
+                 result={"ok": True}, duration_ms=42, row_count=1, sequence=1)
+    )
+    await repository.add_feedback(
+        MessageFeedback(message_id=assistant_message.id, value=FeedbackValue.UP, comment=None)
+    )
+
+    history = await reader.full_history(conversation.id)
+    assert len(history) == 2
+    assert history[0].role == "user"
+    assert history[0].tool_calls == []
+    assert history[0].feedback is None
+    assert history[1].role == "assistant"
+    assert history[1].tool_calls[0].name == "get_prerequisites"
+    assert history[1].feedback is not None
+    assert history[1].feedback.value == "up"

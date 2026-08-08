@@ -1,4 +1,5 @@
 import json
+from contextlib import aclosing
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -13,6 +14,7 @@ from app.api.v1.deps import (
     get_token_issuer,
 )
 from app.application.agents.llm_types import LLMResponse, ToolCallRequest
+from app.domain.identity.entities import Role, User
 from app.infrastructure.persistence.academic_repository import normalize_name
 from app.infrastructure.persistence.conversation_repository import SqlAlchemyConversationRepository
 from app.infrastructure.persistence.models import (
@@ -22,6 +24,7 @@ from app.infrastructure.persistence.models import (
     StudentProfileModel,
     UserModel,
 )
+from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.main import app
 from tests.application.agents.fakes import FakeLLMProvider, FakePromptComposer
 
@@ -98,6 +101,43 @@ async def client(session_factory: async_sessionmaker[AsyncSession]):
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
         yield http_client
     app.dependency_overrides.clear()
+
+
+async def student_headers(
+    client: AsyncClient, email: str = "estudiante@pascualbravo.edu.co"
+) -> dict[str, str]:
+    """Registers and logs in a student through the real HTTP flow, so tests exercise the
+    same path a real client would (see test_endpoints.py::register_coordination for why
+    the coordination account itself is seeded directly rather than self-registered)."""
+    async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
+        session = await anext(sessions)
+        coordinator = await SqlAlchemyUserRepository(session).add(
+            User(email=f"coord-{email}", password_hash="x", role=Role.COORDINATION), None,
+        )
+    coordination_token = get_token_issuer().issue(subject=str(coordinator.id), role="coordination")
+
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={
+            "code": f"P-{coordinator.id}", "name": "Ingenieria en Software",
+            "semester_count": 10,
+        },
+        headers={"Authorization": f"Bearer {coordination_token}"},
+    )
+    program_id = program.json()["id"]
+
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email, "password": "a-strong-password",
+            "first_name": "Ana", "last_name": "Ruiz", "document": f"doc-{coordinator.id}",
+            "program_id": program_id, "current_semester": 4,
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "a-strong-password"},
+    )
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
 def _events(body: str) -> list[tuple[str, dict]]:
@@ -254,4 +294,64 @@ async def test_feedback_is_rejected_for_another_students_message(client, session
         headers={"Authorization": f"Bearer {token}"},
     )
 
+    assert response.status_code == 404
+
+
+async def test_lists_conversations_most_recent_first(client: AsyncClient) -> None:
+    headers = await student_headers(client)
+
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[LLMResponse(content="Hola, en que te ayudo?")]
+    )
+    first = await client.post(
+        "/api/v1/chat", json={"message": "primera pregunta"}, headers=headers
+    )
+    assert first.status_code == 200
+
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[LLMResponse(content="Claro, dime mas")]
+    )
+    second = await client.post(
+        "/api/v1/chat", json={"message": "segunda pregunta"}, headers=headers
+    )
+    assert second.status_code == 200
+
+    response = await client.get("/api/v1/chat/conversations", headers=headers)
+    assert response.status_code == 200
+    titles = [row["title"] for row in response.json()]
+    assert titles[0] == "segunda pregunta"
+    assert titles[1] == "primera pregunta"
+
+
+async def test_gets_a_conversation_with_messages(client: AsyncClient) -> None:
+    headers = await student_headers(client)
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[LLMResponse(content="Hola, en que te ayudo?")]
+    )
+    created = await client.post("/api/v1/chat", json={"message": "hola"}, headers=headers)
+    assert created.status_code == 200
+    done_event = next(data for name, data in _events(created.text) if name == "done")
+    conversation_id = done_event["conversation_id"]
+
+    response = await client.get(f"/api/v1/chat/conversations/{conversation_id}", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["messages"][0]["role"] == "user"
+    assert body["messages"][0]["content"] == "hola"
+
+
+async def test_cannot_read_another_students_conversation(client: AsyncClient) -> None:
+    headers_a = await student_headers(client, email="a@pascualbravo.edu.co")
+    headers_b = await student_headers(client, email="b@pascualbravo.edu.co")
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[LLMResponse(content="Hola, en que te ayudo?")]
+    )
+    created = await client.post("/api/v1/chat", json={"message": "hola"}, headers=headers_a)
+    assert created.status_code == 200
+    done_event = next(data for name, data in _events(created.text) if name == "done")
+    conversation_id = done_event["conversation_id"]
+
+    response = await client.get(
+        f"/api/v1/chat/conversations/{conversation_id}", headers=headers_b
+    )
     assert response.status_code == 404

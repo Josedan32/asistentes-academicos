@@ -19,7 +19,15 @@ from app.api.v1.deps import (
     require_authentication,
     require_student,
 )
-from app.api.v1.schemas import ChatIn, FeedbackIn
+from app.api.v1.schemas import (
+    ChatIn,
+    ConversationDetailOut,
+    ConversationSummaryOut,
+    FeedbackIn,
+    FeedbackOut,
+    MessageOut,
+    ToolCallOut,
+)
 from app.application.agents.agent_loop import AgentLoop, DoneEvent, ThinkingEvent, ToolCallEvent
 from app.application.agents.dto import StudentContext
 from app.domain.agents.entities import Conversation, FeedbackValue, MessageFeedback
@@ -158,3 +166,53 @@ async def submit_feedback(
     )
     assert feedback.id is not None
     return {"id": feedback.id}
+
+
+@router.get("/conversations", response_model=list[ConversationSummaryOut])
+async def list_conversations(
+    user: Annotated[CurrentUser, Depends(require_student)],
+    conversation_reader: ConversationReaderDep,
+) -> list[ConversationSummaryOut]:
+    rows = await conversation_reader.list_by_user(user.user_id)
+    return [
+        ConversationSummaryOut(id=r.id, title=r.title, course_id=r.course_id,
+                                course_name=r.course_name, created_at=r.created_at)
+        for r in rows
+    ]
+
+
+@router.get("/conversations/{conversation_id}", response_model=ConversationDetailOut)
+async def get_conversation(
+    conversation_id: int,
+    user: Annotated[CurrentUser, Depends(require_student)],
+    conversation_reader: ConversationReaderDep,
+    reader: AcademicReaderDep,
+) -> ConversationDetailOut:
+    conversation = await conversation_reader.get(conversation_id)
+    if conversation is None or conversation.user_id != user.user_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+
+    course_name = None
+    if conversation.course_id is not None:
+        course = await reader.course_detail(conversation.course_id)
+        course_name = course.name if course is not None else None
+
+    messages = await conversation_reader.full_history(conversation_id)
+    return ConversationDetailOut(
+        id=conversation_id, title=conversation.title, course_id=conversation.course_id,
+        course_name=course_name,
+        messages=[
+            MessageOut(
+                id=m.id, role=m.role, content=m.content,
+                tool_calls=[
+                    ToolCallOut(id=t.id, name=t.name, arguments=t.arguments, result=t.result,
+                                duration_ms=t.duration_ms, row_count=t.row_count,
+                                sequence=t.sequence)
+                    for t in m.tool_calls
+                ],
+                feedback=FeedbackOut(value=m.feedback.value, comment=m.feedback.comment)
+                if m.feedback is not None else None,
+            )
+            for m in messages
+        ],
+    )

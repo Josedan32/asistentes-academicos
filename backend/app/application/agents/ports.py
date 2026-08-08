@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.application.agents.dto import StudentContext
+from app.application.agents.dto import ConversationSummary, MessageDetail, StudentContext
 from app.application.agents.llm_types import LLMMessage, LLMResponse, ToolDefinition
 from app.domain.agents.entities import Conversation, Message, MessageFeedback, ToolCall
 
@@ -27,6 +27,10 @@ class ConversationReader(Protocol):
     async def message_owner(self, message_id: int) -> int | None:
         """The user_id of the conversation a message belongs to, or None if unknown."""
         ...
+
+    async def list_by_user(self, user_id: int) -> list[ConversationSummary]: ...
+
+    async def full_history(self, conversation_id: int) -> list[MessageDetail]: ...
 
 
 class LLMProvider(Protocol):
