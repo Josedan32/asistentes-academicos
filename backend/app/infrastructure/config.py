@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     ollama_keep_alive: str = "10m"
 
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # Absolute path: `env_file=".env"` resolves against the current working directory,
     # so settings would load from backend/ but not from the repository root.
     model_config = SettingsConfigDict(
