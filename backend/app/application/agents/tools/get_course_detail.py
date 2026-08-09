@@ -7,10 +7,9 @@ applies to identity."""
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import CourseDetail
-from app.application.academic.ports import AcademicReader
 from app.application.academic.queries import GetCourseDetail
 from app.application.agents.llm_types import ToolDefinition
-from app.application.agents.tools.registry import ToolContext, ToolSpec
+from app.application.agents.tools.registry import ToolContext, ToolDependencies, ToolSpec
 
 DESCRIPTION = "Get a course's credits, area and description within the student's program."
 
@@ -20,9 +19,11 @@ class GetCourseDetailArgs(BaseModel):
 
 
 async def _run(
-    reader: AcademicReader, args: GetCourseDetailArgs, context: ToolContext
+    deps: ToolDependencies, args: GetCourseDetailArgs, context: ToolContext
 ) -> CourseDetail | None:
-    return await GetCourseDetail(reader).execute(course=args.course, program_id=context.program_id)
+    return await GetCourseDetail(deps.reader).execute(
+        course=args.course, program_id=context.program_id
+    )
 
 
 SPEC = ToolSpec(

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMMessage, LLMResponse
 from app.domain.agents.entities import Conversation, Message, MessageFeedback, ToolCall
+from app.domain.agents.materials import CourseMaterial, MaterialChunk
 
 
 @dataclass
@@ -30,6 +31,27 @@ class FakeLLMProvider:
                 f"{len(self.responses)} responses were scripted"
             )
         return self.responses[len(self.calls) - 1]
+
+
+@dataclass
+class FakeMaterialReader:
+    """No-database MaterialReader double: never actually called by the four existing
+    tools, only by search_course_material's own tests, which want real search behavior
+    and use SqlAlchemyMaterialReader instead — this stub just satisfies the signature."""
+
+    materials: list[CourseMaterial] = field(default_factory=list)
+    chunks: list[MaterialChunk] = field(default_factory=list)
+
+    async def list_materials(self, course_id: int) -> list[CourseMaterial]:
+        return [m for m in self.materials if m.course_id == course_id]
+
+    async def get_material(self, material_id: int) -> CourseMaterial | None:
+        return next((m for m in self.materials if m.id == material_id), None)
+
+    async def search(
+        self, course_id: int, query_embedding: list[float], limit: int = 5
+    ) -> list[MaterialChunk]:
+        return [c for c in self.chunks if c.course_id == course_id][:limit]
 
 
 @dataclass

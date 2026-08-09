@@ -15,10 +15,9 @@ to the authenticated student's own current_semester rather than leaving the mode
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import CourseSummary
-from app.application.academic.ports import AcademicReader
 from app.application.academic.queries import ListSemesterCourses
 from app.application.agents.llm_types import ToolDefinition
-from app.application.agents.tools.registry import ToolContext, ToolSpec
+from app.application.agents.tools.registry import ToolContext, ToolDependencies, ToolSpec
 
 DESCRIPTION = (
     "List the courses a student takes in a given semester of their own program. Omit "
@@ -34,10 +33,10 @@ class ListSemesterCoursesArgs(BaseModel):
 
 
 async def _run(
-    reader: AcademicReader, args: ListSemesterCoursesArgs, context: ToolContext
+    deps: ToolDependencies, args: ListSemesterCoursesArgs, context: ToolContext
 ) -> list[CourseSummary]:
     semester = args.semester if args.semester is not None else context.current_semester
-    return await ListSemesterCourses(reader).execute(
+    return await ListSemesterCourses(deps.reader).execute(
         program_id=context.program_id, semester=semester
     )
 

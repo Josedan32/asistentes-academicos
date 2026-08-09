@@ -12,8 +12,10 @@ from app.api.v1.deps import (
     ConversationReaderDep,
     ConversationRepositoryDep,
     CurrentUser,
+    EmbeddingProviderDep,
     InferenceGateDep,
     LLMProviderDep,
+    MaterialReaderDep,
     PromptComposerDep,
     UserRepositoryDep,
     require_authentication,
@@ -70,6 +72,8 @@ async def chat(
     provider: LLMProviderDep,
     prompt_composer: PromptComposerDep,
     gate: InferenceGateDep,
+    material_reader: MaterialReaderDep,
+    embedder: EmbeddingProviderDep,
 ) -> StreamingResponse:
     profile = await users.find_profile_by_user_id(user.user_id)
     if profile is None:
@@ -125,7 +129,8 @@ async def chat(
                 yield _sse("loading_model", {})
 
             loop = AgentLoop(provider=provider, reader=reader, conversations=conversations,
-                              prompt_composer=prompt_composer)
+                              prompt_composer=prompt_composer, material_reader=material_reader,
+                              embedder=embedder)
             async for event in loop.run(conversation=conversation, history=history,
                                          user_message=payload.message, context=context):
                 if isinstance(event, ThinkingEvent):

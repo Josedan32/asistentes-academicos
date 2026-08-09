@@ -3,6 +3,7 @@ from app.application.agents.tools import (
     get_course_detail,
     get_prerequisites,
     list_semester_courses,
+    search_course_material,
 )
 from app.application.agents.tools.registry import TOOLS
 
@@ -12,5 +13,6 @@ TOOLS.update(
         "get_prerequisites": get_prerequisites.SPEC,
         "get_course_detail": get_course_detail.SPEC,
         "find_course_in_programs": find_course_in_programs.SPEC,
+        "search_course_material": search_course_material.SPEC,
     }
 )

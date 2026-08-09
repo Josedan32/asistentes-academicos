@@ -6,30 +6,42 @@ from app.application.agents.tools.list_semester_courses import ListSemesterCours
 from app.application.agents.tools.registry import (
     TOOLS,
     ToolContext,
+    ToolDependencies,
     row_count,
     to_jsonable,
     tool_definitions,
 )
+from app.application.agents.tools.search_course_material import SearchCourseMaterialArgs
+from app.domain.agents.materials import CourseMaterial, MaterialChunk
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import normalize_name
+from app.infrastructure.persistence.material_reader import SqlAlchemyMaterialReader
+from app.infrastructure.persistence.material_repository import SqlAlchemyMaterialRepository
 from app.infrastructure.persistence.models import (
     CourseModel,
     CurriculumEntryModel,
     PrerequisiteModel,
     ProgramModel,
 )
+from tests.application.agents.fakes import FakeEmbeddingProvider, FakeMaterialReader
 
 
-def test_exactly_four_tools_are_registered() -> None:
+def _deps(reader: SqlAlchemyAcademicReader) -> ToolDependencies:
+    return ToolDependencies(
+        reader=reader, material_reader=FakeMaterialReader(), embedder=FakeEmbeddingProvider()
+    )
+
+
+def test_exactly_five_tools_are_registered() -> None:
     assert set(TOOLS) == {
         "list_semester_courses", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs",
+        "find_course_in_programs", "search_course_material",
     }
 
 
 def test_tool_definitions_expose_a_json_schema_for_each_tool() -> None:
     definitions = tool_definitions()
-    assert len(definitions) == 4
+    assert len(definitions) == 5
     assert all(d.parameters["type"] == "object" for d in definitions)
 
 
@@ -106,10 +118,10 @@ async def test_get_course_detail_uses_the_injected_program_id_for_credits(
     args = spec.argument_model(course="Base de Datos 2")
 
     in_electronics = await spec.handler(
-        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=electronics.id, current_semester=4)
     )
     in_software = await spec.handler(
-        reader, args, ToolContext(program_id=software.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=4)
     )
 
     assert in_electronics.credits == 3
@@ -142,10 +154,10 @@ async def test_list_semester_courses_uses_the_injected_program_id(session: Async
     args = spec.argument_model(semester=3)
 
     in_software = await spec.handler(
-        reader, args, ToolContext(program_id=software.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=4)
     )
     in_electronics = await spec.handler(
-        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=electronics.id, current_semester=4)
     )
 
     assert [c.code for c in in_software] == ["BD1"]
@@ -175,7 +187,7 @@ async def test_list_semester_courses_defaults_to_the_students_own_semester(
     args = spec.argument_model()
 
     rows = await spec.handler(
-        reader, args, ToolContext(program_id=software.id, current_semester=5)
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=5)
     )
 
     assert [c.code for c in rows] == ["BD1"]
@@ -201,7 +213,7 @@ async def test_list_semester_courses_honours_an_explicit_semester_over_the_defau
     args = spec.argument_model(semester=6)
 
     rows = await spec.handler(
-        reader, args, ToolContext(program_id=software.id, current_semester=5)
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=5)
     )
 
     assert [c.code for c in rows] == ["BD1"]
@@ -241,11 +253,53 @@ async def test_get_prerequisites_uses_the_injected_program_id(session: AsyncSess
     args = spec.argument_model(course="Base de Datos 2")
 
     in_software = await spec.handler(
-        reader, args, ToolContext(program_id=software.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=4)
     )
     in_electronics = await spec.handler(
-        reader, args, ToolContext(program_id=electronics.id, current_semester=4)
+        _deps(reader), args, ToolContext(program_id=electronics.id, current_semester=4)
     )
 
     assert [p.course_code for p in in_software.prerequisites] == ["BD1"]
     assert in_electronics.prerequisites == []
+
+
+def test_search_course_material_schema_never_exposes_course_id() -> None:
+    schema = TOOLS["search_course_material"].definition.parameters
+    assert "course_id" not in schema["properties"]
+    assert set(SearchCourseMaterialArgs.model_fields) == {"query", "course"}
+
+
+async def test_search_course_material_uses_the_active_course_by_default(
+    session: AsyncSession,
+) -> None:
+    course = CourseModel(
+        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos", default_credits=4,
+    )
+    session.add(course)
+    await session.commit()
+
+    material_repository = SqlAlchemyMaterialRepository(session)
+    material = await material_repository.add_material(
+        CourseMaterial(course_id=course.id, filename="guia.pdf")
+    )
+    assert material.id is not None
+    await material_repository.add_chunks([
+        MaterialChunk(material_id=material.id, course_id=course.id, sequence=1, page=None,
+                       text="que es normalizacion", embedding=[1.0, 0.0]),
+    ])
+
+    reader = SqlAlchemyAcademicReader(session)
+    material_reader = SqlAlchemyMaterialReader(session)
+    spec = TOOLS["search_course_material"]
+    args = spec.argument_model(query="que es normalizacion")
+    deps = ToolDependencies(
+        reader=reader, material_reader=material_reader, embedder=FakeEmbeddingProvider(dimensions=2)
+    )
+
+    result = await spec.handler(
+        deps, args,
+        ToolContext(program_id=1, current_semester=1, active_course_id=course.id),
+    )
+
+    assert result["fragments"][0]["text"] == "que es normalizacion"

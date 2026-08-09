@@ -8,7 +8,9 @@ from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicRea
 from app.infrastructure.persistence.academic_repository import normalize_name
 from app.infrastructure.persistence.models import CourseModel, CurriculumEntryModel, ProgramModel
 from tests.application.agents.fakes import (
+    FakeEmbeddingProvider,
     FakeLLMProvider,
+    FakeMaterialReader,
     FakePromptComposer,
     InMemoryConversationRepository,
 )
@@ -35,6 +37,8 @@ def _loop(provider: FakeLLMProvider, reader, conversations=None) -> AgentLoop:
         reader=reader,
         conversations=conversations or InMemoryConversationRepository(),
         prompt_composer=FakePromptComposer(),
+        material_reader=FakeMaterialReader(),
+        embedder=FakeEmbeddingProvider(),
     )
 
 
@@ -231,6 +235,31 @@ async def test_course_scoped_conversations_never_get_list_semester_courses(
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[0] == {
         "get_prerequisites", "get_course_detail", "find_course_in_programs",
+        "search_course_material",
+    }
+
+
+async def test_course_scoped_conversations_get_search_course_material(
+    session: AsyncSession,
+) -> None:
+    """Proves search_course_material joined the course-scoped tool set (Task C1) — the
+    tests above already prove the general/course-scoped selection mechanism itself works."""
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
+
+    events = [
+        event
+        async for event in _loop(provider, reader).run(
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
+        )
+    ]
+
+    assert isinstance(events[-1], DoneEvent)
+    assert provider.tool_names_received[-1] == {
+        "search_course_material", "get_prerequisites", "get_course_detail",
+        "find_course_in_programs",
     }
 
 

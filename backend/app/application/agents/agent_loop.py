@@ -10,8 +10,20 @@ from pydantic import ValidationError
 from app.application.academic.ports import AcademicReader
 from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMMessage
-from app.application.agents.ports import ConversationRepository, LLMProvider, PromptComposer
-from app.application.agents.tools.registry import TOOLS, ToolContext, row_count, to_jsonable
+from app.application.agents.material_ports import MaterialReader
+from app.application.agents.ports import (
+    ConversationRepository,
+    EmbeddingProvider,
+    LLMProvider,
+    PromptComposer,
+)
+from app.application.agents.tools.registry import (
+    TOOLS,
+    ToolContext,
+    ToolDependencies,
+    row_count,
+    to_jsonable,
+)
 from app.domain.agents.entities import Conversation, Message, MessageRole, ToolCall
 
 MAX_ITERATIONS = 3
@@ -21,7 +33,9 @@ TOOL_TIMEOUT_SECONDS = 10.0
 # the student's semester (including unrelated ones like Ingles), and a course-scoped assistant
 # that can name other courses will answer with their content when asked something ambiguous —
 # a confirmed production bug (Algebra Lineal answering with English-course material).
-COURSE_SCOPED_TOOL_NAMES = {"get_prerequisites", "get_course_detail", "find_course_in_programs"}
+COURSE_SCOPED_TOOL_NAMES = {
+    "search_course_material", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+}
 GENERAL_TOOL_NAMES = {
     "list_semester_courses", "get_prerequisites", "get_course_detail", "find_course_in_programs",
 }
@@ -62,6 +76,8 @@ class AgentLoop:
     reader: AcademicReader
     conversations: ConversationRepository
     prompt_composer: PromptComposer
+    material_reader: MaterialReader
+    embedder: EmbeddingProvider
 
     async def run(
         self,
@@ -132,7 +148,11 @@ class AgentLoop:
                 try:
                     result = await asyncio.wait_for(
                         spec.handler(
-                            self.reader, args,
+                            ToolDependencies(
+                                reader=self.reader, material_reader=self.material_reader,
+                                embedder=self.embedder,
+                            ),
+                            args,
                             ToolContext(
                                 program_id=context.program_id,
                                 current_semester=context.current_semester,

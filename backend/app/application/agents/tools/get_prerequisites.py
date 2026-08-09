@@ -7,10 +7,9 @@ model asking the student to supply their own program id instead of answering."""
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import PrerequisiteResult
-from app.application.academic.ports import AcademicReader
 from app.application.academic.queries import GetPrerequisites
 from app.application.agents.llm_types import ToolDefinition
-from app.application.agents.tools.registry import ToolContext, ToolSpec
+from app.application.agents.tools.registry import ToolContext, ToolDependencies, ToolSpec
 
 DESCRIPTION = "Get the prerequisites of a course within the student's own program curriculum."
 
@@ -20,9 +19,9 @@ class GetPrerequisitesArgs(BaseModel):
 
 
 async def _run(
-    reader: AcademicReader, args: GetPrerequisitesArgs, context: ToolContext
+    deps: ToolDependencies, args: GetPrerequisitesArgs, context: ToolContext
 ) -> PrerequisiteResult:
-    return await GetPrerequisites(reader).execute(
+    return await GetPrerequisites(deps.reader).execute(
         program_id=context.program_id, course=args.course
     )
 

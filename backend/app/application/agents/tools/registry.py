@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from app.application.academic.ports import AcademicReader
 from app.application.agents.llm_types import ToolDefinition
+from app.application.agents.material_ports import MaterialReader
+from app.application.agents.ports import EmbeddingProvider
 
 
 @dataclass(frozen=True)
@@ -18,10 +20,20 @@ class ToolContext:
 
 
 @dataclass(frozen=True)
+class ToolDependencies:
+    """A small explicit dependency bundle every tool handler receives, so adding a
+    dependency here doesn't change every existing tool's call signature again next time."""
+
+    reader: AcademicReader
+    material_reader: MaterialReader
+    embedder: EmbeddingProvider
+
+
+@dataclass(frozen=True)
 class ToolSpec:
     definition: ToolDefinition
     argument_model: type[BaseModel]
-    handler: Callable[[AcademicReader, Any, ToolContext], Awaitable[Any]]
+    handler: Callable[[ToolDependencies, Any, ToolContext], Awaitable[Any]]
 
 
 def to_jsonable(value: Any) -> Any:
