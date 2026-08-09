@@ -182,3 +182,9 @@ class ConversationDetailOut(BaseModel):
     course_id: int | None
     course_name: str | None
     messages: list[MessageOut]
+
+
+class CourseMaterialOut(BaseModel):
+    id: int
+    course_id: int
+    filename: str

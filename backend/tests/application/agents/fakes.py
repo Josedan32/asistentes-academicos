@@ -33,6 +33,16 @@ class FakeLLMProvider:
 
 
 @dataclass
+class FakeEmbeddingProvider:
+    """No-network EmbeddingProvider double: a fixed-length vector per input."""
+
+    dimensions: int = 4
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        return [[float(len(text))] * self.dimensions for text in texts]
+
+
+@dataclass
 class FakePromptComposer:
     prompt: str = "system prompt"
     version: str = "test-v0"

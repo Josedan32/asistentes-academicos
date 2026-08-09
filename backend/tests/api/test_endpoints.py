@@ -432,3 +432,54 @@ async def test_editing_requires_coordination(client: AsyncClient) -> None:
         headers={"Authorization": f"Bearer {issue_token('student')}"},
     )
     assert response.status_code == 403
+
+
+async def test_uploads_lists_and_deletes_course_material(client: AsyncClient) -> None:
+    from app.api.v1.deps import get_embedding_provider
+    from tests.application.agents.fakes import FakeEmbeddingProvider
+
+    app.dependency_overrides[get_embedding_provider] = lambda: FakeEmbeddingProvider()
+
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    course = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD2", "name": "Base de Datos 2", "area": "Datos", "default_credits": 4},
+        headers=headers,
+    )
+    course_id = course.json()["id"]
+
+    pdf_bytes = (
+        __import__("pathlib").Path(__file__).resolve().parents[1]
+        / "fixtures" / "sample.pdf"
+    ).read_bytes()
+
+    uploaded = await client.post(
+        f"/api/v1/admin/courses/{course_id}/materials",
+        files={"file": ("guia.pdf", pdf_bytes, "application/pdf")},
+        headers=headers,
+    )
+    assert uploaded.status_code == 201
+    material_id = uploaded.json()["id"]
+
+    listed = await client.get(
+        f"/api/v1/admin/courses/{course_id}/materials", headers=headers
+    )
+    assert listed.status_code == 200
+    assert [m["filename"] for m in listed.json()] == ["guia.pdf"]
+
+    deleted = await client.delete(f"/api/v1/admin/materials/{material_id}", headers=headers)
+    assert deleted.status_code == 204
+
+    listed_again = await client.get(
+        f"/api/v1/admin/courses/{course_id}/materials", headers=headers
+    )
+    assert listed_again.json() == []
+
+
+async def test_uploading_material_requires_coordination(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/admin/courses/1/materials",
+        files={"file": ("x.pdf", b"", "application/pdf")},
+    )
+    assert response.status_code == 401

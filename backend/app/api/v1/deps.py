@@ -9,11 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.agents.ports import LLMProvider
 from app.infrastructure.config import get_settings
 from app.infrastructure.llm.caching_provider import CachingLLMProvider
+from app.infrastructure.llm.ollama_embedding_provider import OllamaEmbeddingProvider
 from app.infrastructure.llm.ollama_provider import OllamaProvider
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
 from app.infrastructure.persistence.conversation_reader import SqlAlchemyConversationReader
 from app.infrastructure.persistence.conversation_repository import SqlAlchemyConversationRepository
+from app.infrastructure.persistence.material_reader import SqlAlchemyMaterialReader
+from app.infrastructure.persistence.material_repository import SqlAlchemyMaterialRepository
 from app.infrastructure.persistence.session import get_session
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.infrastructure.prompts.composer import TemplatePromptComposer
@@ -101,6 +104,22 @@ def require_student(
     return user
 
 
+def get_material_repository(session: SessionDep) -> SqlAlchemyMaterialRepository:
+    return SqlAlchemyMaterialRepository(session)
+
+
+def get_material_reader(session: SessionDep) -> SqlAlchemyMaterialReader:
+    return SqlAlchemyMaterialReader(session)
+
+
+@lru_cache
+def get_embedding_provider() -> OllamaEmbeddingProvider:
+    settings = get_settings()
+    return OllamaEmbeddingProvider(
+        base_url=settings.ollama_base_url, model=settings.ollama_embedding_model,
+    )
+
+
 def get_conversation_repository(session: SessionDep) -> SqlAlchemyConversationRepository:
     return SqlAlchemyConversationRepository(session)
 
@@ -143,3 +162,8 @@ LLMProviderDep = Annotated[LLMProvider, Depends(get_llm_provider)]
 PromptComposerDep = Annotated[TemplatePromptComposer, Depends(get_prompt_composer)]
 AcademicReaderDep = Annotated[SqlAlchemyAcademicReader, Depends(get_academic_reader)]
 UserRepositoryDep = Annotated[SqlAlchemyUserRepository, Depends(get_user_repository)]
+MaterialRepositoryDep = Annotated[
+    SqlAlchemyMaterialRepository, Depends(get_material_repository)
+]
+MaterialReaderDep = Annotated[SqlAlchemyMaterialReader, Depends(get_material_reader)]
+EmbeddingProviderDep = Annotated[OllamaEmbeddingProvider, Depends(get_embedding_provider)]

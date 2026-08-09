@@ -1,14 +1,18 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.api.v1.deps import (
+    EmbeddingProviderDep,
+    MaterialReaderDep,
+    MaterialRepositoryDep,
     get_academic_reader,
     get_academic_repository,
     require_coordination,
 )
 from app.api.v1.schemas import (
     CourseIn,
+    CourseMaterialOut,
     CourseOut,
     CoursePlacementOut,
     CourseWithUsageOut,
@@ -34,6 +38,7 @@ from app.application.academic.queries import (
     ListCourses,
     ListPrograms,
 )
+from app.application.agents.ingest_material import IngestCourseMaterial
 from app.domain.academic.exceptions import AcademicError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
@@ -201,6 +206,42 @@ async def assign_course(
         credits=entry.credits,
         prerequisite_course_ids=list(entry.prerequisite_course_ids),
     )
+
+
+@router.post(
+    "/courses/{course_id}/materials",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CourseMaterialOut,
+)
+async def upload_material(
+    course_id: int,
+    repository: MaterialRepositoryDep,
+    embedder: EmbeddingProviderDep,
+    file: Annotated[UploadFile, File()],
+) -> CourseMaterialOut:
+    content = await file.read()
+    material = await IngestCourseMaterial(repository=repository, embedder=embedder).execute(
+        course_id=course_id, filename=file.filename or "material", content=content,
+    )
+    assert material.id is not None
+    return CourseMaterialOut(
+        id=material.id, course_id=material.course_id, filename=material.filename
+    )
+
+
+@router.get("/courses/{course_id}/materials", response_model=list[CourseMaterialOut])
+async def list_materials(course_id: int, reader: MaterialReaderDep) -> list[CourseMaterialOut]:
+    materials = await reader.list_materials(course_id)
+    result = []
+    for m in materials:
+        assert m.id is not None
+        result.append(CourseMaterialOut(id=m.id, course_id=m.course_id, filename=m.filename))
+    return result
+
+
+@router.delete("/materials/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_material(material_id: int, repository: MaterialRepositoryDep) -> None:
+    await repository.delete_material(material_id)
 
 
 @router.get(
