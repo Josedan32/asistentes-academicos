@@ -7,6 +7,7 @@ from typing import Any
 class StudentContext:
     program_id: int
     current_semester: int
+    active_course_id: int | None = None
     active_course_name: str | None = None
 
 

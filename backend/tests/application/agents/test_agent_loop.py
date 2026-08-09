@@ -208,3 +208,77 @@ async def test_program_id_for_get_course_detail_comes_from_context_not_the_model
 
     tool_call_event = next(e for e in events if isinstance(e, ToolCallEvent))
     assert tool_call_event.result["credits"] == 4
+
+
+async def test_course_scoped_conversations_never_get_list_semester_courses(
+    session: AsyncSession,
+) -> None:
+    """Regression test: a per-course conversation that can call list_semester_courses can
+    answer with a completely unrelated course's content (confirmed in production — the
+    Algebra Lineal assistant answered with English-course material)."""
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
+
+    events = [
+        event
+        async for event in _loop(provider, reader).run(
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
+        )
+    ]
+
+    assert isinstance(events[-1], DoneEvent)
+    assert provider.tool_names_received[0] == {
+        "get_prerequisites", "get_course_detail", "find_course_in_programs",
+    }
+
+
+async def test_general_conversations_still_get_list_semester_courses(
+    session: AsyncSession,
+) -> None:
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
+
+    events = [
+        event
+        async for event in _loop(provider, reader).run(
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4),
+        )
+    ]
+
+    assert isinstance(events[-1], DoneEvent)
+    assert provider.tool_names_received[0] == {
+        "list_semester_courses", "get_prerequisites", "get_course_detail",
+        "find_course_in_programs",
+    }
+
+
+async def test_a_course_scoped_conversation_rejects_a_list_semester_courses_call(
+    session: AsyncSession,
+) -> None:
+    """Even if the model calls a tool outside its offered set (e.g. a stale/hallucinated
+    call), the loop must not execute it — this is the same defense-in-depth as the unknown
+    tool name branch, not just relying on the tools list sent to the provider."""
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[
+        LLMResponse(content=None, tool_calls=[
+            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+        ]),
+        LLMResponse(content="ok"),
+    ])
+
+    events = [
+        event
+        async for event in _loop(provider, reader).run(
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
+        )
+    ]
+
+    assert isinstance(events[-1], DoneEvent)
+    second_call_messages = provider.calls[1]
+    assert any(m.role == "tool" and "unknown tool" in m.content for m in second_call_messages)

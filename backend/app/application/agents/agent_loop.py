@@ -17,6 +17,15 @@ from app.domain.agents.entities import Conversation, Message, MessageRole, ToolC
 MAX_ITERATIONS = 3
 TOOL_TIMEOUT_SECONDS = 10.0
 
+# Per-course conversations must never see list_semester_courses: it returns every course in
+# the student's semester (including unrelated ones like Ingles), and a course-scoped assistant
+# that can name other courses will answer with their content when asked something ambiguous —
+# a confirmed production bug (Algebra Lineal answering with English-course material).
+COURSE_SCOPED_TOOL_NAMES = {"get_prerequisites", "get_course_detail", "find_course_in_programs"}
+GENERAL_TOOL_NAMES = {
+    "list_semester_courses", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+}
+
 
 @dataclass(frozen=True)
 class ThinkingEvent:
@@ -75,7 +84,10 @@ class AgentLoop:
         messages += [LLMMessage(role=m.role.value, content=m.content) for m in history]
         messages.append(LLMMessage(role="user", content=user_message))
 
-        tool_defs = [spec.definition for spec in TOOLS.values()]
+        active_tool_names = (
+            COURSE_SCOPED_TOOL_NAMES if context.active_course_id is not None else GENERAL_TOOL_NAMES
+        )
+        tool_defs = [TOOLS[name].definition for name in active_tool_names if name in TOOLS]
         tool_count = 0
         response = None
 
@@ -102,7 +114,7 @@ class AgentLoop:
                 yield ThinkingEvent(tool=call.name)
 
                 spec = TOOLS.get(call.name)
-                if spec is None:
+                if spec is None or call.name not in active_tool_names:
                     error_text = json.dumps({"error": f"unknown tool: {call.name}"})
                     messages.append(LLMMessage(role="tool", name=call.name,
                                                 tool_call_id=call.id, content=error_text))
@@ -124,6 +136,7 @@ class AgentLoop:
                             ToolContext(
                                 program_id=context.program_id,
                                 current_semester=context.current_semester,
+                                active_course_id=context.active_course_id,
                             ),
                         ),
                         timeout=TOOL_TIMEOUT_SECONDS,

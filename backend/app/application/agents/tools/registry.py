@@ -14,6 +14,7 @@ class ToolContext:
 
     program_id: int
     current_semester: int
+    active_course_id: int | None = None
 
 
 @dataclass(frozen=True)

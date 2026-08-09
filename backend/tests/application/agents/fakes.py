@@ -14,6 +14,7 @@ class FakeLLMProvider:
     model: str = "fake-v1"
     loaded: bool = True
     calls: list[list[LLMMessage]] = field(default_factory=list)
+    tool_names_received: list[set[str]] = field(default_factory=list)
 
     async def is_loaded(self) -> bool:
         return self.loaded
@@ -22,6 +23,7 @@ class FakeLLMProvider:
         self, messages: list[LLMMessage], tools: list | None = None
     ) -> LLMResponse:
         self.calls.append(messages)
+        self.tool_names_received.append({t.name for t in tools} if tools else set())
         if len(self.calls) > len(self.responses):
             raise AssertionError(
                 f"FakeLLMProvider called {len(self.calls)} times but only "

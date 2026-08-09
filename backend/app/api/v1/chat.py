@@ -87,8 +87,17 @@ async def chat(
         )
         history = []
 
+    # active_course_id always comes from the persisted conversation, not the request payload:
+    # payload.course_id is only meaningful the moment a new conversation is created, and is
+    # None on every later turn of the same conversation.
+    active_course_name = None
+    if conversation.course_id is not None:
+        course = await reader.course_detail(conversation.course_id)
+        active_course_name = course.name if course is not None else None
+
     context = StudentContext(
-        program_id=profile.program_id, current_semester=profile.current_semester
+        program_id=profile.program_id, current_semester=profile.current_semester,
+        active_course_id=conversation.course_id, active_course_name=active_course_name,
     )
 
     async def stream() -> AsyncIterator[bytes]:

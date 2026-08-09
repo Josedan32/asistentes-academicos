@@ -42,6 +42,17 @@ def test_carries_the_grounding_rule() -> None:
     assert "no devuelve resultados" in prompt
 
 
+def test_active_course_line_tells_the_model_not_to_discuss_other_courses() -> None:
+    """Regression test for the Algebra Lineal assistant answering with English-course
+    content: the prompt must explicitly forbid straying to other courses, not just name
+    the active one."""
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(
+        StudentContext(program_id=1, current_semester=4, active_course_name="Algebra Lineal")
+    )
+    assert "otra materia" in prompt.lower()
+
+
 def test_unknown_version_raises() -> None:
     composer = TemplatePromptComposer()
     context = StudentContext(program_id=1, current_semester=4)
