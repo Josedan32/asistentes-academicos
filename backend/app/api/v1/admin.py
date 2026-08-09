@@ -39,6 +39,7 @@ from app.application.academic.queries import (
     ListPrograms,
 )
 from app.application.agents.ingest_material import IngestCourseMaterial
+from app.application.agents.text_extraction import UnsupportedMaterialFormatError
 from app.domain.academic.exceptions import AcademicError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
@@ -220,9 +221,14 @@ async def upload_material(
     file: Annotated[UploadFile, File()],
 ) -> CourseMaterialOut:
     content = await file.read()
-    material = await IngestCourseMaterial(repository=repository, embedder=embedder).execute(
-        course_id=course_id, filename=file.filename or "material", content=content,
-    )
+    try:
+        material = await IngestCourseMaterial(repository=repository, embedder=embedder).execute(
+            course_id=course_id, filename=file.filename or "material", content=content,
+        )
+    except UnsupportedMaterialFormatError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
     assert material.id is not None
     return CourseMaterialOut(
         id=material.id, course_id=material.course_id, filename=material.filename

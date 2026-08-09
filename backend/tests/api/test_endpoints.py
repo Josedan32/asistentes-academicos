@@ -477,6 +477,31 @@ async def test_uploads_lists_and_deletes_course_material(client: AsyncClient) ->
     assert listed_again.json() == []
 
 
+async def test_uploading_an_unsupported_format_returns_422(client: AsyncClient) -> None:
+    from app.api.v1.deps import get_embedding_provider
+    from tests.application.agents.fakes import FakeEmbeddingProvider
+
+    app.dependency_overrides[get_embedding_provider] = lambda: FakeEmbeddingProvider()
+
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    course = await client.post(
+        "/api/v1/admin/courses",
+        json={"code": "BD2", "name": "Base de Datos 2", "area": "Datos", "default_credits": 4},
+        headers=headers,
+    )
+    course_id = course.json()["id"]
+
+    response = await client.post(
+        f"/api/v1/admin/courses/{course_id}/materials",
+        files={"file": ("slides.pptx", b"whatever", "application/vnd.ms-powerpoint")},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "format" in response.json()["detail"].lower()
+
+
 async def test_uploading_material_requires_coordination(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/admin/courses/1/materials",
