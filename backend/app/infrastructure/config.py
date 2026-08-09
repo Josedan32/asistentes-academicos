@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen2.5:3b"
     ollama_num_ctx: int = 8192
     ollama_keep_alive: str = "10m"
+    ollama_embedding_model: str = "nomic-embed-text"
 
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"

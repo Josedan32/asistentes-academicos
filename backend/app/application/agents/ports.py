@@ -49,6 +49,10 @@ class LLMProvider(Protocol):
     ) -> LLMResponse: ...
 
 
+class EmbeddingProvider(Protocol):
+    async def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
 class PromptComposer(Protocol):
     def compose_system_prompt(self, context: StudentContext) -> tuple[str, str]:
         """Returns (prompt_text, prompt_version). Every Message records the version."""
