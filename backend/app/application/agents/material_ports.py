@@ -1,0 +1,17 @@
+from typing import Protocol
+
+from app.domain.agents.materials import CourseMaterial, MaterialChunk
+
+
+class MaterialRepository(Protocol):
+    async def add_material(self, material: CourseMaterial) -> CourseMaterial: ...
+
+    async def add_chunks(self, chunks: list[MaterialChunk]) -> None: ...
+
+    async def delete_material(self, material_id: int) -> None: ...
+
+
+class MaterialReader(Protocol):
+    async def list_materials(self, course_id: int) -> list[CourseMaterial]: ...
+
+    async def get_material(self, material_id: int) -> CourseMaterial | None: ...

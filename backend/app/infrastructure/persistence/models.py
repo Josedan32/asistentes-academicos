@@ -143,3 +143,32 @@ class MessageFeedbackModel(Base):
     value: Mapped[str] = mapped_column(String(4))
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class CourseMaterialModel(Base):
+    __tablename__ = "course_materials"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class MaterialChunkModel(Base):
+    __tablename__ = "material_chunks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    material_id: Mapped[int] = mapped_column(
+        ForeignKey("course_materials.id", ondelete="CASCADE"), index=True
+    )
+    # Denormalized from course_materials.course_id: search filters by course_id on every
+    # chat message, and this avoids a join on that hot path.
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), index=True
+    )
+    sequence: Mapped[int] = mapped_column(Integer)
+    page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    text: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float]] = mapped_column(JSON)
