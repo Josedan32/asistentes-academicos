@@ -51,6 +51,8 @@ def row_count(tool_name: str, result: Any) -> int:
         return 1
     if tool_name == "get_prerequisites":
         return len(result.prerequisites)
+    if tool_name == "search_course_material":
+        return len(result["fragments"])
     return len(result)
 
 

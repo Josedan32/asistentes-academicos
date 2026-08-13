@@ -75,6 +75,14 @@ def test_row_count_of_a_missing_course_detail() -> None:
     assert row_count("get_course_detail", None) == 0
 
 
+def test_row_count_of_search_course_material_counts_fragments() -> None:
+    assert row_count("search_course_material", {"fragments": []}) == 0
+    assert row_count(
+        "search_course_material",
+        {"fragments": [{"text": "a", "page": None}, {"text": "b", "page": None}]},
+    ) == 2
+
+
 def test_to_jsonable_converts_nested_dataclasses() -> None:
     from app.application.academic.dto import PrerequisiteResult, PrerequisiteView
 
