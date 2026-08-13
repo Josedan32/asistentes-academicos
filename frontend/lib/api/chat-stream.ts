@@ -30,6 +30,7 @@ export interface ChatStreamPayload {
   conversation_id: number | null;
   course_id: number | null;
   message: string;
+  mode: string;
 }
 
 export async function streamChat(

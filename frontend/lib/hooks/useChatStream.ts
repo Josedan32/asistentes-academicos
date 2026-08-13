@@ -6,6 +6,8 @@ import type { ConversationDetailOut } from "@/lib/types";
 
 export type RunState = "idle" | "queued" | "loading_model" | "thinking" | "streaming" | "error";
 
+export type ChatMode = "consulta" | "estudio" | "practica" | "examen" | "resumen";
+
 export interface ChatToolCall {
   id: string | number;
   name: string;
@@ -47,6 +49,7 @@ export function useChatStream(courseId: number | null) {
   const [queuedInfo, setQueuedInfo] = useState<QueuedInfo | null>(null);
   const [thinkingTool, setThinkingTool] = useState<string | null>(null);
   const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
+  const [mode, setMode] = useState<ChatMode>("consulta");
   const abortRef = useRef<AbortController | null>(null);
   const toolSequenceRef = useRef(0);
   const sendingRef = useRef(false);
@@ -116,7 +119,7 @@ export function useChatStream(courseId: number | null) {
 
       try {
         await streamChat(
-          { conversation_id: conversationId, course_id: courseId, message: text },
+          { conversation_id: conversationId, course_id: courseId, message: text, mode },
           (event) => {
             switch (event.event) {
               case "queued":
@@ -203,7 +206,7 @@ export function useChatStream(courseId: number | null) {
         sendingRef.current = false;
       }
     },
-    [conversationId, courseId]
+    [conversationId, courseId, mode]
   );
 
   const stop = useCallback(() => {
@@ -218,5 +221,6 @@ export function useChatStream(courseId: number | null) {
   return {
     conversationId, messages, runState, queuedInfo, thinkingTool, errorInfo,
     send, stop, reset, loadConversation, applyFeedback, clearError,
+    mode, setMode,
   };
 }

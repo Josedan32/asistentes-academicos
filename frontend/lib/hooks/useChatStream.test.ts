@@ -182,6 +182,35 @@ describe("useChatStream", () => {
     expect(result.current.messages).toHaveLength(4);
   });
 
+  it("sends the current mode with every message and defaults to consulta", async () => {
+    let sentBody: string | undefined;
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, options: RequestInit) => {
+        sentBody = options.body as string;
+        return Promise.resolve(fakeStreamResponse([
+          'event: done\ndata: {"tool_count":0,"total_ms":0,"source_count":0,' +
+            '"conversation_id":1,"message_id":1}\n\n',
+        ]));
+      }
+    );
+    const { result } = renderHook(() => useChatStream(null));
+
+    await act(async () => {
+      await result.current.send("hola");
+    });
+
+    expect(JSON.parse(sentBody!).mode).toBe("consulta");
+
+    act(() => {
+      result.current.setMode("estudio");
+    });
+    await act(async () => {
+      await result.current.send("explicame esto");
+    });
+
+    expect(JSON.parse(sentBody!).mode).toBe("estudio");
+  });
+
   it("clearError() returns to idle without discarding message history", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       fakeStreamResponse(['event: error\ndata: {"code":"x","message":"boom"}\n\n'])

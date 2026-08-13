@@ -88,7 +88,13 @@ export function ChatShell({
         onSelectConversation={handleSelectConversation}
       />
       <div className="flex min-h-0 min-w-0 flex-col bg-app-bg">
-        <ChatHeader activeAssistant={activeAssistant} runState={stream.runState} />
+        <ChatHeader
+          activeAssistant={activeAssistant}
+          runState={stream.runState}
+          mode={stream.mode}
+          onModeChange={stream.setMode}
+          showModeSelector={activeAssistant.type === "course"}
+        />
 
         <div className="flex-1 overflow-auto py-7">
           <div className="mx-auto flex max-w-[800px] flex-col gap-[22px] px-6">

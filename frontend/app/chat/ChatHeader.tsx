@@ -4,14 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { getMe, getChatModel } from "@/lib/api/me";
 import { assistantTitle, type ActiveAssistant } from "@/lib/assistant-identity";
 import { robotStateFor } from "@/lib/robot-state";
-import type { RunState } from "@/lib/hooks/useChatStream";
+import type { ChatMode, RunState } from "@/lib/hooks/useChatStream";
 import { AssistantAvatar } from "./AssistantAvatar";
+import { ModeSelector } from "./ModeSelector";
 
 export function ChatHeader({
-  activeAssistant, runState = "idle",
+  activeAssistant, runState = "idle", mode, onModeChange, showModeSelector,
 }: {
   activeAssistant: ActiveAssistant;
   runState?: RunState;
+  mode: ChatMode;
+  onModeChange: (mode: ChatMode) => void;
+  showModeSelector: boolean;
 }) {
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
   const modelQuery = useQuery({ queryKey: ["chat-model"], queryFn: getChatModel });
@@ -32,6 +36,10 @@ export function ChatHeader({
           <div className="text-[12.5px] leading-[1.3] text-text-secondary">{contextLine}</div>
         </div>
       </div>
+
+      {showModeSelector && (
+        <ModeSelector mode={mode} onModeChange={onModeChange} disabled={runState !== "idle"} />
+      )}
     </div>
   );
 }
