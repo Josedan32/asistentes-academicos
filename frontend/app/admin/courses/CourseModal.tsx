@@ -23,6 +23,7 @@ export function CourseModal({
   const [code, setCode] = useState(course?.code ?? "");
   const [credits, setCredits] = useState(course?.default_credits ?? 4);
   const [area, setArea] = useState(course?.area ?? AREAS[0]);
+  const [materialError, setMaterialError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const materialsQuery = useQuery({
@@ -34,14 +35,25 @@ export function CourseModal({
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || course === null) return;
-    await uploadMaterial(course.id, file);
-    await queryClient.invalidateQueries({ queryKey: ["course-materials", course.id] });
-    event.target.value = "";
+    try {
+      await uploadMaterial(course.id, file);
+      await queryClient.invalidateQueries({ queryKey: ["course-materials", course.id] });
+      setMaterialError(null);
+    } catch {
+      setMaterialError("No se pudo subir el archivo. Verifica el formato (solo PDF o Word).");
+    } finally {
+      event.target.value = "";
+    }
   }
 
   async function handleDeleteMaterial(materialId: number) {
-    await deleteMaterial(materialId);
-    await queryClient.invalidateQueries({ queryKey: ["course-materials", course?.id] });
+    try {
+      await deleteMaterial(materialId);
+      await queryClient.invalidateQueries({ queryKey: ["course-materials", course?.id] });
+      setMaterialError(null);
+    } catch {
+      setMaterialError("No se pudo eliminar el material.");
+    }
   }
 
   return (
@@ -94,6 +106,9 @@ export function CourseModal({
                   </div>
                 ))}
               </div>
+              {materialError && (
+                <div className="text-[13px] font-medium text-error-accent">{materialError}</div>
+              )}
               <label className="flex h-10 cursor-pointer items-center justify-center rounded-control
                                  border border-dashed border-border-dashed text-[13px] font-medium
                                  text-text-secondary hover:border-accent hover:text-accent">
