@@ -303,3 +303,88 @@ async def test_search_course_material_uses_the_active_course_by_default(
     )
 
     assert result["fragments"][0]["text"] == "que es normalizacion"
+
+
+async def test_search_course_material_searches_a_named_course_instead_of_the_active_one(
+    session: AsyncSession,
+) -> None:
+    """A student can name a different course (typically a prerequisite) to search, per
+    spec §2 — proving `Resolved` actually rewires `course_id` away from `active_course_id`."""
+    active_course = CourseModel(
+        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos", default_credits=4,
+    )
+    named_course = CourseModel(
+        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos", default_credits=3,
+    )
+    session.add_all([active_course, named_course])
+    await session.commit()
+
+    material_repository = SqlAlchemyMaterialRepository(session)
+    active_material = await material_repository.add_material(
+        CourseMaterial(course_id=active_course.id, filename="bd2.pdf")
+    )
+    named_material = await material_repository.add_material(
+        CourseMaterial(course_id=named_course.id, filename="bd1.pdf")
+    )
+    assert active_material.id is not None and named_material.id is not None
+    await material_repository.add_chunks([
+        MaterialChunk(material_id=active_material.id, course_id=active_course.id, sequence=1,
+                       page=None, text="contenido de base de datos 2", embedding=[1.0, 0.0]),
+        MaterialChunk(material_id=named_material.id, course_id=named_course.id, sequence=1,
+                       page=None, text="contenido de base de datos 1", embedding=[1.0, 0.0]),
+    ])
+
+    reader = SqlAlchemyAcademicReader(session)
+    material_reader = SqlAlchemyMaterialReader(session)
+    spec = TOOLS["search_course_material"]
+    args = spec.argument_model(query="contenido", course="Base de Datos 1")
+    deps = ToolDependencies(
+        reader=reader, material_reader=material_reader, embedder=FakeEmbeddingProvider(dimensions=2)
+    )
+
+    result = await spec.handler(
+        deps, args,
+        ToolContext(program_id=1, current_semester=1, active_course_id=active_course.id),
+    )
+
+    assert result["fragments"] == [{"text": "contenido de base de datos 1", "page": None}]
+
+
+async def test_search_course_material_falls_back_to_active_course_when_the_name_is_unresolved(
+    session: AsyncSession,
+) -> None:
+    """An unresolvable `course` (NotFound/Ambiguous) must not leave the tool stuck — it
+    silently keeps searching the active course rather than surfacing a resolver error."""
+    active_course = CourseModel(
+        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos", default_credits=4,
+    )
+    session.add(active_course)
+    await session.commit()
+
+    material_repository = SqlAlchemyMaterialRepository(session)
+    material = await material_repository.add_material(
+        CourseMaterial(course_id=active_course.id, filename="bd2.pdf")
+    )
+    assert material.id is not None
+    await material_repository.add_chunks([
+        MaterialChunk(material_id=material.id, course_id=active_course.id, sequence=1, page=None,
+                       text="contenido de base de datos 2", embedding=[1.0, 0.0]),
+    ])
+
+    reader = SqlAlchemyAcademicReader(session)
+    material_reader = SqlAlchemyMaterialReader(session)
+    spec = TOOLS["search_course_material"]
+    args = spec.argument_model(query="contenido", course="Materia que no existe zzz")
+    deps = ToolDependencies(
+        reader=reader, material_reader=material_reader, embedder=FakeEmbeddingProvider(dimensions=2)
+    )
+
+    result = await spec.handler(
+        deps, args,
+        ToolContext(program_id=1, current_semester=1, active_course_id=active_course.id),
+    )
+
+    assert result["fragments"] == [{"text": "contenido de base de datos 2", "page": None}]
