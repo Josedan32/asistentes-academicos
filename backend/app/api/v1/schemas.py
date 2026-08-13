@@ -121,6 +121,7 @@ class ChatIn(BaseModel):
     conversation_id: int | None = None
     course_id: int | None = None
     message: str = Field(min_length=1, max_length=2000)
+    mode: str = "consulta"
 
 
 class FeedbackIn(BaseModel):

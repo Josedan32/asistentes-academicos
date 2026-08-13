@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from app.domain.agents.modes import ChatMode
+
 
 @dataclass(frozen=True)
 class StudentContext:
@@ -9,6 +11,7 @@ class StudentContext:
     current_semester: int
     active_course_id: int | None = None
     active_course_name: str | None = None
+    mode: ChatMode = ChatMode.CONSULTA
 
 
 @dataclass(frozen=True)

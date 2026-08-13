@@ -1,6 +1,7 @@
 import pytest
 
 from app.application.agents.dto import StudentContext
+from app.domain.agents.modes import ChatMode
 from app.infrastructure.prompts.composer import PROMPT_VERSION, TemplatePromptComposer
 
 
@@ -58,3 +59,27 @@ def test_unknown_version_raises() -> None:
     context = StudentContext(program_id=1, current_semester=4)
     with pytest.raises(FileNotFoundError):
         composer.compose_system_prompt(context, version="v99")
+
+
+def test_each_mode_produces_different_framing_text() -> None:
+    composer = TemplatePromptComposer()
+    prompts = {
+        mode: composer.compose_system_prompt(
+            StudentContext(program_id=1, current_semester=4, mode=mode)
+        )[0]
+        for mode in ChatMode
+    }
+    # Every mode's prompt text must differ from every other mode's — five modes producing
+    # the same prompt would be a silent no-op feature.
+    assert len(set(prompts.values())) == len(ChatMode)
+
+
+def test_consulta_mode_matches_the_original_unframed_prompt() -> None:
+    composer = TemplatePromptComposer()
+    default_prompt, _ = composer.compose_system_prompt(
+        StudentContext(program_id=1, current_semester=4)
+    )
+    consulta_prompt, _ = composer.compose_system_prompt(
+        StudentContext(program_id=1, current_semester=4, mode=ChatMode.CONSULTA)
+    )
+    assert default_prompt == consulta_prompt

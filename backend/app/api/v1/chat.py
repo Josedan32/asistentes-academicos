@@ -33,6 +33,7 @@ from app.api.v1.schemas import (
 from app.application.agents.agent_loop import AgentLoop, DoneEvent, ThinkingEvent, ToolCallEvent
 from app.application.agents.dto import StudentContext
 from app.domain.agents.entities import Conversation, FeedbackValue, MessageFeedback
+from app.domain.agents.modes import ChatMode
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -99,9 +100,15 @@ async def chat(
         course = await reader.course_detail(conversation.course_id)
         active_course_name = course.name if course is not None else None
 
+    try:
+        mode = ChatMode(payload.mode)
+    except ValueError:
+        mode = ChatMode.CONSULTA
+
     context = StudentContext(
         program_id=profile.program_id, current_semester=profile.current_semester,
         active_course_id=conversation.course_id, active_course_name=active_course_name,
+        mode=mode,
     )
 
     async def stream() -> AsyncIterator[bytes]:
