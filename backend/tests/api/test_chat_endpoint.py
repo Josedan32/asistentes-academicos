@@ -25,6 +25,7 @@ from app.infrastructure.persistence.models import (
     UserModel,
 )
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
+from app.infrastructure.prompts.composer import TemplatePromptComposer
 from app.main import app
 from tests.application.agents.fakes import FakeLLMProvider, FakePromptComposer
 
@@ -233,6 +234,57 @@ async def test_chat_yields_a_queue_timeout_error_when_the_poll_bound_is_exceeded
     names = [name for name, _ in events]
     assert names[-1] == "error"
     assert events[-1][1]["code"] == "queue_timeout"
+
+
+async def test_general_conversation_forces_consulta_mode_even_if_payload_claims_otherwise(
+    client, session_factory
+) -> None:
+    """Regression test for finding 1: a general (no course_id) conversation must always be
+    framed as Consulta, even if the client claims a course-scoped mode like "examen" — that
+    mode's instructions tell the model to call search_course_material, a tool absent from
+    GENERAL_TOOL_NAMES, which would otherwise burn every iteration on a rejected tool call."""
+    async with session_factory() as session:
+        user_id, _ = await _seed_student(session)
+    token = get_token_issuer().issue(subject=str(user_id), role="student")
+    app.dependency_overrides[get_prompt_composer] = lambda: TemplatePromptComposer()
+    provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
+    app.dependency_overrides[get_llm_provider] = lambda: provider
+
+    response = await client.post(
+        "/api/v1/chat", json={"message": "hola", "mode": "examen"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    system_message = provider.calls[0][0]
+    assert system_message.role == "system"
+    assert "Modo examen" not in system_message.content
+
+
+async def test_chat_rejects_a_course_id_outside_the_students_curriculum(
+    client, session_factory
+) -> None:
+    """Regression test for finding 6: course_id is the only gate on which course's uploaded
+    material search_course_material can read, so it must belong to the student's own program
+    curriculum rather than being accepted as any id in the whole catalogue."""
+    async with session_factory() as session:
+        user_id, _ = await _seed_student(session)
+        other_course = CourseModel(
+            code="ING1", name="Ingles 1", normalized_name=normalize_name("Ingles 1"),
+            area="Idiomas", default_credits=2,
+        )
+        session.add(other_course)
+        await session.commit()
+        other_course_id = other_course.id
+    token = get_token_issuer().issue(subject=str(user_id), role="student")
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(responses=[])
+
+    response = await client.post(
+        "/api/v1/chat", json={"message": "hola", "course_id": other_course_id},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
 
 
 async def test_chat_requires_authentication(client) -> None:

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.agents.agent_loop import AgentLoop, DoneEvent, ToolCallEvent
@@ -137,6 +139,51 @@ async def test_invalid_arguments_return_a_tool_error_to_the_model_not_an_excepti
     ]
 
     assert isinstance(events[-1], DoneEvent)
+    second_call_messages = provider.calls[1]
+    assert any(m.role == "tool" and "error" in m.content for m in second_call_messages)
+
+
+@dataclass
+class RaisingEmbeddingProvider:
+    """Simulates OllamaEmbeddingProvider.embed's raise_for_status() failing (model not
+    pulled, connection error) — per finding 4 of the final review."""
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        raise RuntimeError("embedding provider unreachable")
+
+
+async def test_a_failing_tool_handler_returns_a_tool_error_to_the_model_not_an_exception(
+    session: AsyncSession,
+) -> None:
+    """Regression test for finding 4: search_course_material can raise from
+    OllamaEmbeddingProvider.embed (404/model not pulled, connection error) — every
+    pre-existing tool only ever touched SQLite, so an unhandled exception here used to
+    propagate all the way out of AgentLoop.run. This mirrors the existing invalid-arguments
+    tool-error test's pattern: the loop must yield a DoneEvent, not raise."""
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[
+        LLMResponse(content=None, tool_calls=[
+            ToolCallRequest(id="1", name="search_course_material", arguments={"query": "algo"})
+        ]),
+        LLMResponse(content="No pude buscar el material."),
+    ])
+    loop = AgentLoop(
+        provider=provider, reader=reader, conversations=InMemoryConversationRepository(),
+        prompt_composer=FakePromptComposer(), material_reader=FakeMaterialReader(),
+        embedder=RaisingEmbeddingProvider(),
+    )
+
+    events = [
+        event
+        async for event in loop.run(
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
+        )
+    ]
+
+    assert isinstance(events[-1], DoneEvent)
+    assert events[-1].content == "No pude buscar el material."
     second_call_messages = provider.calls[1]
     assert any(m.role == "tool" and "error" in m.content for m in second_call_messages)
 

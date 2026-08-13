@@ -86,6 +86,21 @@ async def chat(
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Conversation not found")
         history = await conversation_reader.history(payload.conversation_id)
     else:
+        if payload.course_id is not None:
+            # course_id is the only gate on which course's uploaded material
+            # search_course_material can read (finding 6 of the final review) — it must
+            # belong to the student's own program curriculum, not just exist in the
+            # catalogue. course_detail(course_id, program_id) returns credits=None when
+            # the course isn't linked to that program's curriculum (CurriculumEntryModel
+            # .credits is non-nullable), the same signal get_course_detail already relies
+            # on for out-of-curriculum credits.
+            course_in_curriculum = await reader.course_detail(
+                payload.course_id, profile.program_id
+            )
+            if course_in_curriculum is None or course_in_curriculum.credits is None:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND, detail="Course not found in curriculum"
+                )
         title = payload.message.strip()[:60] or "Nueva conversacion"
         conversation = await conversations.create(
             Conversation(user_id=user.user_id, course_id=payload.course_id, title=title)
@@ -103,6 +118,14 @@ async def chat(
     try:
         mode = ChatMode(payload.mode)
     except ValueError:
+        mode = ChatMode.CONSULTA
+
+    # Defense in depth: a general (non-course) conversation must never be framed in a
+    # course-scoped mode like Examen/Practica, which instructs the model to call
+    # search_course_material — a tool absent from GENERAL_TOOL_NAMES. Any client sending
+    # a stale/forged mode for a general conversation is overridden server-side, not just
+    # the current frontend's own reset() (finding 1 of the final review).
+    if conversation.course_id is None:
         mode = ChatMode.CONSULTA
 
     context = StudentContext(

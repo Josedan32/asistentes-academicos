@@ -166,6 +166,17 @@ class AgentLoop:
                     messages.append(LLMMessage(role="tool", name=call.name,
                                                 tool_call_id=call.id, content=error_text))
                     continue
+                except Exception as error:
+                    # search_course_material can raise from OllamaEmbeddingProvider.embed's
+                    # raise_for_status() (e.g. model not pulled, connection error) — every
+                    # pre-existing tool only ever touched SQLite, so this branch didn't exist
+                    # before. A single tool's failure must not abort the whole turn: return a
+                    # tool error the model can react to, same as the timeout case above,
+                    # instead of letting it propagate past chat.py's SSE stream (finding 4).
+                    error_text = json.dumps({"error": str(error)})
+                    messages.append(LLMMessage(role="tool", name=call.name,
+                                                tool_call_id=call.id, content=error_text))
+                    continue
 
                 duration_ms = int((time.monotonic() - start) * 1000)
                 jsonable = to_jsonable(result)

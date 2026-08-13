@@ -316,8 +316,12 @@ async def test_search_course_material_uses_the_active_course_by_default(
 async def test_search_course_material_searches_a_named_course_instead_of_the_active_one(
     session: AsyncSession,
 ) -> None:
-    """A student can name a different course (typically a prerequisite) to search, per
-    spec §2 — proving `Resolved` actually rewires `course_id` away from `active_course_id`."""
+    """A student can name a different course (a real prerequisite) to search, per spec §2 —
+    proving `Resolved` actually rewires `course_id` away from `active_course_id`. `named_course`
+    must be wired as an actual prerequisite of the active course's curriculum entry: since
+    finding 2, the `course` argument only resolves against the active course's prerequisites,
+    not the whole catalogue."""
+    program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     active_course = CourseModel(
         code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
         area="Datos", default_credits=4,
@@ -326,7 +330,21 @@ async def test_search_course_material_searches_a_named_course_instead_of_the_act
         code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
         area="Datos", default_credits=3,
     )
-    session.add_all([active_course, named_course])
+    session.add_all([program, active_course, named_course])
+    await session.commit()
+    active_entry = CurriculumEntryModel(
+        program_id=program.id, course_id=active_course.id, semester=4, credits=4
+    )
+    session.add_all([
+        active_entry,
+        CurriculumEntryModel(
+            program_id=program.id, course_id=named_course.id, semester=3, credits=3
+        ),
+    ])
+    await session.commit()
+    session.add(
+        PrerequisiteModel(curriculum_entry_id=active_entry.id, required_course_id=named_course.id)
+    )
     await session.commit()
 
     material_repository = SqlAlchemyMaterialRepository(session)
@@ -354,10 +372,85 @@ async def test_search_course_material_searches_a_named_course_instead_of_the_act
 
     result = await spec.handler(
         deps, args,
-        ToolContext(program_id=1, current_semester=1, active_course_id=active_course.id),
+        ToolContext(program_id=program.id, current_semester=1, active_course_id=active_course.id),
     )
 
     assert result["fragments"] == [{"text": "contenido de base de datos 1", "page": None}]
+
+
+async def test_search_course_material_cannot_reach_an_unrelated_non_prerequisite_course(
+    session: AsyncSession,
+) -> None:
+    """Regression test for finding 2: naming a course that is real but NOT a prerequisite of
+    the active course (e.g. Ingles, unrelated to Algebra Lineal) must never surface that
+    course's material — the `course` argument only widens the search to prerequisites, not
+    to the whole catalogue. Falling back to the active course's own material is acceptable;
+    returning the unrelated course's content is the exact leak this closes."""
+    program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
+    active_course = CourseModel(
+        code="ALG", name="Algebra Lineal", normalized_name=normalize_name("Algebra Lineal"),
+        area="Matematicas", default_credits=4,
+    )
+    prerequisite_course = CourseModel(
+        code="CAL1", name="Calculo 1", normalized_name=normalize_name("Calculo 1"),
+        area="Matematicas", default_credits=4,
+    )
+    unrelated_course = CourseModel(
+        code="ING1", name="Ingles 1", normalized_name=normalize_name("Ingles 1"),
+        area="Idiomas", default_credits=2,
+    )
+    session.add_all([program, active_course, prerequisite_course, unrelated_course])
+    await session.commit()
+    active_entry = CurriculumEntryModel(
+        program_id=program.id, course_id=active_course.id, semester=4, credits=4
+    )
+    session.add_all([
+        active_entry,
+        CurriculumEntryModel(
+            program_id=program.id, course_id=prerequisite_course.id, semester=2, credits=4
+        ),
+        CurriculumEntryModel(
+            program_id=program.id, course_id=unrelated_course.id, semester=1, credits=2
+        ),
+    ])
+    await session.commit()
+    session.add(
+        PrerequisiteModel(
+            curriculum_entry_id=active_entry.id, required_course_id=prerequisite_course.id
+        )
+    )
+    await session.commit()
+
+    material_repository = SqlAlchemyMaterialRepository(session)
+    active_material = await material_repository.add_material(
+        CourseMaterial(course_id=active_course.id, filename="algebra.pdf")
+    )
+    unrelated_material = await material_repository.add_material(
+        CourseMaterial(course_id=unrelated_course.id, filename="ingles.pdf")
+    )
+    assert active_material.id is not None and unrelated_material.id is not None
+    await material_repository.add_chunks([
+        MaterialChunk(material_id=active_material.id, course_id=active_course.id, sequence=1,
+                       page=None, text="contenido de algebra lineal", embedding=[1.0, 0.0]),
+        MaterialChunk(material_id=unrelated_material.id, course_id=unrelated_course.id,
+                       sequence=1, page=None, text="contenido de ingles", embedding=[1.0, 0.0]),
+    ])
+
+    reader = SqlAlchemyAcademicReader(session)
+    material_reader = SqlAlchemyMaterialReader(session)
+    spec = TOOLS["search_course_material"]
+    args = spec.argument_model(query="contenido", course="Ingles 1")
+    deps = ToolDependencies(
+        reader=reader, material_reader=material_reader, embedder=FakeEmbeddingProvider(dimensions=2)
+    )
+
+    result = await spec.handler(
+        deps, args,
+        ToolContext(program_id=program.id, current_semester=1, active_course_id=active_course.id),
+    )
+
+    fragment_texts = [fragment["text"] for fragment in result["fragments"]]
+    assert "contenido de ingles" not in fragment_texts
 
 
 async def test_search_course_material_falls_back_to_active_course_when_the_name_is_unresolved(

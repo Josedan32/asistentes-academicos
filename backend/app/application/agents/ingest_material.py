@@ -22,13 +22,24 @@ class IngestCourseMaterial:
         assert material.id is not None
 
         if chunks:
-            embeddings = await self.embedder.embed(chunks)
-            await self.repository.add_chunks([
-                MaterialChunk(
-                    material_id=material.id, course_id=course_id, sequence=index + 1,
-                    page=None, text=chunk, embedding=embedding,
-                )
-                for index, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=True))
-            ])
+            try:
+                embeddings = await self.embedder.embed(chunks)
+                await self.repository.add_chunks([
+                    MaterialChunk(
+                        material_id=material.id, course_id=course_id, sequence=index + 1,
+                        page=None, text=chunk, embedding=embedding,
+                    )
+                    for index, (chunk, embedding) in enumerate(
+                        zip(chunks, embeddings, strict=True)
+                    )
+                ])
+            except Exception:
+                # An embedding failure (e.g. Ollama down, model not pulled) must not leave a
+                # zombie material row with zero chunks: the admin UI would list it as if
+                # upload succeeded, while search_course_material would silently return
+                # nothing for it forever. Undo the just-created row and re-raise so the
+                # caller sees the failure instead of a false success.
+                await self.repository.delete_material(material.id)
+                raise
 
         return material
