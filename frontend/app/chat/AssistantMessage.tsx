@@ -1,19 +1,22 @@
 "use client";
 
-import type { ChatMessage } from "@/lib/hooks/useChatStream";
+import type { ChatMessage, ChatMode } from "@/lib/hooks/useChatStream";
 import { useTypewriter } from "@/lib/hooks/useTypewriter";
 import type { RobotState } from "@/lib/robot-state";
 import { AssistantAvatar } from "./AssistantAvatar";
+import { ExerciseCard } from "./ExerciseCard";
 import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallCard } from "./ToolCallCard";
 
 export function AssistantMessage({
-  message, avatarState, isStreaming, feedbackSlot,
+  message, avatarState, isStreaming, feedbackSlot, mode, onSubmitAnswer,
 }: {
   message: ChatMessage;
   avatarState: RobotState;
   isStreaming: boolean;
   feedbackSlot?: (message: ChatMessage) => React.ReactNode;
+  mode: ChatMode;
+  onSubmitAnswer?: (answer: string) => void;
 }) {
   const visibleContent = useTypewriter(message.content, isStreaming);
 
@@ -21,9 +24,16 @@ export function AssistantMessage({
     <div className="flex items-start gap-3">
       <AssistantAvatar size={32} state={avatarState} />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {message.toolCalls.map((toolCall, index) => (
-          <ToolCallCard key={toolCall.id} toolCall={toolCall} defaultOpen={index === 0} />
-        ))}
+        {message.toolCalls.map((toolCall, index) =>
+          toolCall.name === "search_course_material" && (mode === "practica" || mode === "examen")
+            ? (
+              <ExerciseCard
+                key={toolCall.id} toolCall={toolCall}
+                onSubmitAnswer={(answer) => onSubmitAnswer?.(answer)}
+              />
+            )
+            : <ToolCallCard key={toolCall.id} toolCall={toolCall} defaultOpen={index === 0} />
+        )}
 
         {visibleContent && (
           <div className="rounded-[14px_14px_14px_4px] border border-border bg-surface

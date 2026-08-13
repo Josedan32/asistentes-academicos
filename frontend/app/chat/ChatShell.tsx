@@ -107,6 +107,8 @@ export function ChatShell({
               feedbackSlot={(message) => (
                 <FeedbackControls message={message} onFeedbackSubmitted={stream.applyFeedback} />
               )}
+              mode={stream.mode}
+              onSubmitAnswer={(answer) => stream.send(answer)}
             />
           </div>
         </div>
