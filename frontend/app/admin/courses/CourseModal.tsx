@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CourseWithUsageOut } from "@/lib/types";
 import type { CoursePayload } from "@/lib/api/courses-admin";
+import { deleteMaterial, listMaterials, uploadMaterial } from "@/lib/api/materials-admin";
 
 const AREAS = ["Ciencias básicas", "Programación", "Sociohumanística"];
 
@@ -21,6 +23,26 @@ export function CourseModal({
   const [code, setCode] = useState(course?.code ?? "");
   const [credits, setCredits] = useState(course?.default_credits ?? 4);
   const [area, setArea] = useState(course?.area ?? AREAS[0]);
+
+  const queryClient = useQueryClient();
+  const materialsQuery = useQuery({
+    queryKey: ["course-materials", course?.id],
+    queryFn: () => listMaterials(course!.id),
+    enabled: course !== null,
+  });
+
+  async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || course === null) return;
+    await uploadMaterial(course.id, file);
+    await queryClient.invalidateQueries({ queryKey: ["course-materials", course.id] });
+    event.target.value = "";
+  }
+
+  async function handleDeleteMaterial(materialId: number) {
+    await deleteMaterial(materialId);
+    await queryClient.invalidateQueries({ queryKey: ["course-materials", course?.id] });
+  }
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -56,6 +78,30 @@ export function CourseModal({
               </select>
             </label>
           </div>
+          {course && (
+            <div className="flex flex-col gap-[10px]">
+              <div className="text-[13px] font-semibold text-text-label">Material de estudio</div>
+              <div className="flex flex-col gap-2">
+                {(materialsQuery.data ?? []).map((material) => (
+                  <div key={material.id}
+                       className="flex items-center justify-between rounded-control border
+                                  border-border-control px-3 py-2 text-[14px]">
+                    <span className="truncate">{material.filename}</span>
+                    <button onClick={() => handleDeleteMaterial(material.id)}
+                            className="text-[13px] font-medium text-error-accent">
+                      Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <label className="flex h-10 cursor-pointer items-center justify-center rounded-control
+                                 border border-dashed border-border-dashed text-[13px] font-medium
+                                 text-text-secondary hover:border-accent hover:text-accent">
+                + Subir PDF o Word
+                <input type="file" accept=".pdf,.docx" onChange={handleUpload} className="hidden" />
+              </label>
+            </div>
+          )}
           <div className="rounded-control bg-[#F5F7F9] p-[12px_14px] text-[13.5px] leading-[1.5]
                            text-text-secondary">
             Las materias son independientes de la carrera. Se asignan a un semestre desde{" "}
