@@ -63,6 +63,11 @@ export function useChatStream(courseId: number | null) {
     setQueuedInfo(null);
     setThinkingTool(null);
     setErrorInfo(null);
+    // A mode picked in a course-scoped conversation (e.g. "examen") must not survive into
+    // a subsequent General de Carrera conversation: the mode selector is hidden there, but
+    // the stale mode would still be sent with every message, and the backend's general tool
+    // set doesn't support it — see finding 1 of the final review.
+    setMode("consulta");
   }, []);
 
   const loadConversation = useCallback((detail: ConversationDetailOut) => {

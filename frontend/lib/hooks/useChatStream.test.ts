@@ -211,6 +211,25 @@ describe("useChatStream", () => {
     expect(JSON.parse(sentBody!).mode).toBe("estudio");
   });
 
+  it("reset() clears a previously selected mode back to consulta", async () => {
+    // Regression test: switching from a course-scoped conversation (e.g. "examen" mode)
+    // to General de Carrera via ChatShell's handleSelectAssistant calls reset(). If mode
+    // stayed "examen", every later message in the general conversation would still send
+    // mode: "examen", which the backend's general tool set doesn't support.
+    const { result } = renderHook(() => useChatStream(null));
+
+    act(() => {
+      result.current.setMode("examen");
+    });
+    expect(result.current.mode).toBe("examen");
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.mode).toBe("consulta");
+  });
+
   it("clearError() returns to idle without discarding message history", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       fakeStreamResponse(['event: error\ndata: {"code":"x","message":"boom"}\n\n'])
