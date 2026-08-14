@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.application.academic.ports import AcademicReader
+from app.application.academic.ports import AcademicReader, StudentHistoryReader
 from app.application.agents.llm_types import ToolDefinition
 from app.application.agents.material_ports import MaterialReader
 from app.application.agents.ports import EmbeddingProvider
@@ -17,6 +17,7 @@ class ToolContext:
     program_id: int
     current_semester: int
     active_course_id: int | None = None
+    student_user_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class ToolDependencies:
     reader: AcademicReader
     material_reader: MaterialReader
     embedder: EmbeddingProvider
+    history_reader: StudentHistoryReader | None = None
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,8 @@ def row_count(tool_name: str, result: Any) -> int:
         return len(result.prerequisites)
     if tool_name == "search_course_material":
         return len(result["fragments"])
+    if tool_name == "get_academic_history":
+        return len(result["history"]) + len(result["enrollments"])
     return len(result)
 
 

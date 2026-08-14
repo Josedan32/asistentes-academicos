@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -89,6 +90,51 @@ class StudentProfileModel(Base):
     document: Mapped[str] = mapped_column(String(32))
     program_id: Mapped[int] = mapped_column(ForeignKey("programs.id", ondelete="RESTRICT"))
     current_semester: Mapped[int] = mapped_column(Integer)
+
+
+class AcademicHistoryRecordModel(Base):
+    """One past academic period's outcome for one course: grade, pass/fail/cancelled
+    status, and how many times the student has taken it. Read-only from the agent's
+    perspective — populated by coordination/import, never written through the API."""
+
+    __tablename__ = "academic_history_records"
+    __table_args__ = (
+        UniqueConstraint(
+            "student_user_id", "course_id", "period", name="uq_history_student_course_period"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_user_id: Mapped[int] = mapped_column(
+        ForeignKey("student_profiles.user_id", ondelete="CASCADE"), index=True
+    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="RESTRICT"))
+    period: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(20))
+    grade: Mapped[float | None] = mapped_column(Float, nullable=True)
+    concept: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    times_taken: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class StudentEnrollmentModel(Base):
+    """A course the student is actually registered in for a given period — independent
+    of the curriculum's "semester N" grouping, since real students drift from that
+    (repeats, cancellations, testing out of levels ahead of schedule, etc.)."""
+
+    __tablename__ = "student_enrollments"
+    __table_args__ = (
+        UniqueConstraint(
+            "student_user_id", "course_id", "period", name="uq_enrollment_student_course_period"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_user_id: Mapped[int] = mapped_column(
+        ForeignKey("student_profiles.user_id", ondelete="CASCADE"), index=True
+    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="RESTRICT"))
+    period: Mapped[str] = mapped_column(String(10))
+    times_taken: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class ConversationModel(Base):

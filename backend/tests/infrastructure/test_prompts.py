@@ -54,6 +54,47 @@ def test_active_course_line_tells_the_model_not_to_discuss_other_courses() -> No
     assert "otra materia" in prompt.lower()
 
 
+def test_enrolled_courses_are_listed_when_present() -> None:
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(
+        StudentContext(
+            program_id=1, current_semester=5,
+            enrolled_course_names=("Algebra Lineal", "Estadistica"),
+        )
+    )
+    assert "Algebra Lineal" in prompt
+    assert "Estadistica" in prompt
+
+
+def test_enrolled_courses_line_absent_when_none_matriculated() -> None:
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(StudentContext(program_id=1, current_semester=5))
+    assert "matriculadas" not in prompt.lower()
+
+
+def test_general_assistant_gets_told_to_redirect_to_the_enrolled_courses_assistant() -> None:
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(
+        StudentContext(
+            program_id=1, current_semester=5, enrolled_course_names=("Algebra Lineal",)
+        )
+    )
+    assert "cambie al asistente de esa materia" in prompt
+
+
+def test_course_scoped_assistant_is_not_told_to_redirect_students_away() -> None:
+    """The course assistant already has its own boundary rule (never discuss other
+    courses); it must not also carry the general assistant's redirect instruction."""
+    composer = TemplatePromptComposer()
+    prompt, _ = composer.compose_system_prompt(
+        StudentContext(
+            program_id=1, current_semester=5, active_course_name="Algebra Lineal",
+            enrolled_course_names=("Algebra Lineal", "Estadistica"),
+        )
+    )
+    assert "cambie al asistente de esa materia" not in prompt
+
+
 def test_unknown_version_raises() -> None:
     composer = TemplatePromptComposer()
     context = StudentContext(program_id=1, current_semester=4)

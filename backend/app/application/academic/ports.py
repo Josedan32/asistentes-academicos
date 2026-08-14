@@ -1,10 +1,12 @@
 from typing import Protocol
 
 from app.application.academic.dto import (
+    AcademicHistoryEntry,
     CourseDetail,
     CourseSummary,
     CourseWithUsage,
     CurriculumBoardEntry,
+    EnrollmentEntry,
     PrerequisiteView,
     ProgramPlacement,
     ProgramSummary,
@@ -58,3 +60,14 @@ class AcademicReader(Protocol):
     async def curriculum_board(self, program_id: int) -> list[CurriculumBoardEntry]: ...
 
     async def list_courses(self) -> list[CourseWithUsage]: ...
+
+
+class StudentHistoryReader(Protocol):
+    """Read-side port for a student's own academic record: past periods' outcomes and
+    the current period's actual enrollments. Distinct from AcademicReader, which only
+    knows the static curriculum — a student's real history/enrollments are per-student
+    facts, not derivable from the curriculum shape."""
+
+    async def history_of(self, student_user_id: int) -> list[AcademicHistoryEntry]: ...
+
+    async def enrollments_of(self, student_user_id: int) -> list[EnrollmentEntry]: ...

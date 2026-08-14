@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.academic.dto import AcademicHistoryEntry, EnrollmentEntry
 from app.application.agents.tools.get_course_detail import GetCourseDetailArgs
 from app.application.agents.tools.get_prerequisites import GetPrerequisitesArgs
 from app.application.agents.tools.list_semester_courses import ListSemesterCoursesArgs
@@ -23,7 +24,11 @@ from app.infrastructure.persistence.models import (
     PrerequisiteModel,
     ProgramModel,
 )
-from tests.application.agents.fakes import FakeEmbeddingProvider, FakeMaterialReader
+from tests.application.agents.fakes import (
+    FakeEmbeddingProvider,
+    FakeMaterialReader,
+    FakeStudentHistoryReader,
+)
 
 
 def _deps(reader: SqlAlchemyAcademicReader) -> ToolDependencies:
@@ -32,16 +37,16 @@ def _deps(reader: SqlAlchemyAcademicReader) -> ToolDependencies:
     )
 
 
-def test_exactly_five_tools_are_registered() -> None:
+def test_exactly_six_tools_are_registered() -> None:
     assert set(TOOLS) == {
         "list_semester_courses", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs", "search_course_material",
+        "find_course_in_programs", "search_course_material", "get_academic_history",
     }
 
 
 def test_tool_definitions_expose_a_json_schema_for_each_tool() -> None:
     definitions = tool_definitions()
-    assert len(definitions) == 5
+    assert len(definitions) == 6
     assert all(d.parameters["type"] == "object" for d in definitions)
 
 
@@ -489,3 +494,56 @@ async def test_search_course_material_falls_back_to_active_course_when_the_name_
     )
 
     assert result["fragments"] == [{"text": "contenido de base de datos 2", "page": None}]
+
+
+async def test_get_academic_history_returns_the_injected_students_history_and_enrollments() -> (
+    None
+):
+    history_reader = FakeStudentHistoryReader(
+        history={
+            7: [
+                AcademicHistoryEntry(
+                    course_id=1, course_code="ET0112", course_name="Matematicas Discretas",
+                    area="Fundamentacion", credits=2, period="20242", status="Aprobada",
+                    grade=3.3, concept=None, times_taken=1,
+                ),
+            ],
+        },
+        enrollments={
+            7: [
+                EnrollmentEntry(
+                    course_id=2, course_code="ET0113", course_name="Algebra Lineal",
+                    area="Fundamentacion basica", credits=4, period="20262", times_taken=0,
+                ),
+            ],
+        },
+    )
+    deps = ToolDependencies(
+        reader=None, material_reader=FakeMaterialReader(), embedder=FakeEmbeddingProvider(),
+        history_reader=history_reader,
+    )
+    spec = TOOLS["get_academic_history"]
+
+    result = await spec.handler(
+        deps, spec.argument_model(),
+        ToolContext(program_id=1, current_semester=5, student_user_id=7),
+    )
+
+    assert result["history"] == [
+        {"course": "Matematicas Discretas", "period": "20242", "status": "Aprobada",
+         "grade": 3.3, "concept": None, "times_taken": 1}
+    ]
+    assert result["enrollments"] == [
+        {"course": "Algebra Lineal", "period": "20262", "area": "Fundamentacion basica",
+         "credits": 4, "times_taken": 0}
+    ]
+
+
+async def test_get_academic_history_without_a_student_id_returns_empty_lists() -> None:
+    spec = TOOLS["get_academic_history"]
+
+    result = await spec.handler(
+        _deps(reader=None), spec.argument_model(), ToolContext(program_id=1, current_semester=5)
+    )
+
+    assert result == {"history": [], "enrollments": []}

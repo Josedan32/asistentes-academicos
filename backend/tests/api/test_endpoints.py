@@ -310,6 +310,100 @@ async def test_me_requires_authentication(client: AsyncClient) -> None:
     assert response.status_code == 401
 
 
+async def test_my_enrollments_returns_the_students_actual_enrolled_courses(
+    client: AsyncClient,
+) -> None:
+    """Regression coverage for the sidebar showing "materias del semestre N" from the
+    static curriculum instead of what the student is actually registered in — a real
+    student can be ahead or behind that grouping (e.g. testing out of English levels
+    early)."""
+    from app.infrastructure.persistence.models import CourseModel, StudentEnrollmentModel
+
+    token = await register_coordination(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    program = await client.post(
+        "/api/v1/admin/programs",
+        json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
+        headers=headers,
+    )
+    program_id = program.json()["id"]
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "ana@pascualbravo.edu.co", "password": "a-strong-password",
+            "first_name": "Ana", "last_name": "Marin", "document": "123",
+            "program_id": program_id, "current_semester": 5,
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "ana@pascualbravo.edu.co", "password": "a-strong-password"},
+    )
+    student_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
+        session = await anext(sessions)
+        me = await client.get("/api/v1/me", headers=student_headers)
+        course = CourseModel(code="FB0087", name="Ingles 7", area="Formacion humanistica",
+                              default_credits=1)
+        session.add(course)
+        await session.flush()
+        session.add(
+            StudentEnrollmentModel(student_user_id=me.json()["id"], course_id=course.id,
+                                    period="20262", times_taken=0)
+        )
+        await session.commit()
+
+    response = await client.get("/api/v1/me/enrollments", headers=student_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body == [
+        {"course_id": course.id, "course_code": "FB0087", "course_name": "Ingles 7",
+         "area": "Formacion humanistica", "credits": 1, "period": "20262", "times_taken": 0}
+    ]
+
+
+async def test_chat_attachment_returns_extracted_text_and_persists_nothing(
+    client: AsyncClient,
+) -> None:
+    token = issue_token("student")
+    pdf_bytes = (
+        __import__("pathlib").Path(__file__).resolve().parents[1] / "fixtures" / "sample.pdf"
+    ).read_bytes()
+
+    response = await client.post(
+        "/api/v1/chat/attachments",
+        files={"file": ("apuntes.pdf", pdf_bytes, "application/pdf")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["filename"] == "apuntes.pdf"
+    assert body["text"].strip() != ""
+
+
+async def test_chat_attachment_rejects_an_unsupported_format(client: AsyncClient) -> None:
+    token = issue_token("student")
+
+    response = await client.post(
+        "/api/v1/chat/attachments",
+        files={"file": ("slides.pptx", b"whatever", "application/vnd.ms-powerpoint")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+    assert "format" in response.json()["detail"].lower()
+
+
+async def test_chat_attachment_requires_a_student(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/chat/attachments",
+        files={"file": ("apuntes.pdf", b"whatever", "application/pdf")},
+    )
+    assert response.status_code == 401
+
+
 async def test_chat_model_endpoint_reports_the_configured_model(client: AsyncClient) -> None:
     token = issue_token("student")
     response = await client.get("/api/v1/chat/model", headers={"Authorization": f"Bearer {token}"})

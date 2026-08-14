@@ -83,3 +83,28 @@ class CourseWithUsage:
     area: str
     default_credits: int
     placements: list[ProgramPlacement]
+
+
+@dataclass(frozen=True)
+class AcademicHistoryEntry:
+    course_id: int
+    course_code: str
+    course_name: str
+    area: str
+    credits: int
+    period: str
+    status: str
+    grade: float | None
+    concept: str | None
+    times_taken: int
+
+
+@dataclass(frozen=True)
+class EnrollmentEntry:
+    course_id: int
+    course_code: str
+    course_name: str
+    area: str
+    credits: int
+    period: str
+    times_taken: int

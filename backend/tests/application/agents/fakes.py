@@ -3,6 +3,7 @@ the loop testable without a model running."""
 
 from dataclasses import dataclass, field
 
+from app.application.academic.dto import AcademicHistoryEntry, EnrollmentEntry
 from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMMessage, LLMResponse
 from app.domain.agents.entities import Conversation, Message, MessageFeedback, ToolCall
@@ -62,6 +63,20 @@ class FakeEmbeddingProvider:
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         return [[float(len(text))] * self.dimensions for text in texts]
+
+
+@dataclass
+class FakeStudentHistoryReader:
+    """No-database StudentHistoryReader double, keyed by student_user_id."""
+
+    history: dict[int, list[AcademicHistoryEntry]] = field(default_factory=dict)
+    enrollments: dict[int, list[EnrollmentEntry]] = field(default_factory=dict)
+
+    async def history_of(self, student_user_id: int) -> list[AcademicHistoryEntry]:
+        return self.history.get(student_user_id, [])
+
+    async def enrollments_of(self, student_user_id: int) -> list[EnrollmentEntry]:
+        return self.enrollments.get(student_user_id, [])
 
 
 @dataclass

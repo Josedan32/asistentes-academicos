@@ -71,10 +71,29 @@ class TemplatePromptComposer:
             if context.active_course_name
             else ""
         )
+        enrolled_courses_line = self._enrolled_courses_line(context)
         prompt = template.format(
             program_id=context.program_id,
             semester=context.current_semester,
             active_course_line=active_course_line,
+            enrolled_courses_line=enrolled_courses_line,
             mode_instructions=MODE_INSTRUCTIONS[context.mode],
         ).strip()
         return prompt, version
+
+    @staticmethod
+    def _enrolled_courses_line(context: StudentContext) -> str:
+        if not context.enrolled_course_names:
+            return ""
+        line = (
+            f"El estudiante tiene matriculadas estas materias este periodo: "
+            f"{', '.join(context.enrolled_course_names)}."
+        )
+        if context.active_course_name:
+            return line
+        return line + (
+            " Si pregunta algo especifico del contenido de una de esas materias, dile "
+            "que cambie al asistente de esa materia en la barra lateral en vez de "
+            "responder tu los detalles — tu solo tienes informacion general de la "
+            "malla, no el contenido de cada materia."
+        )

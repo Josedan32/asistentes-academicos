@@ -18,6 +18,7 @@ from app.infrastructure.persistence.conversation_repository import SqlAlchemyCon
 from app.infrastructure.persistence.material_reader import SqlAlchemyMaterialReader
 from app.infrastructure.persistence.material_repository import SqlAlchemyMaterialRepository
 from app.infrastructure.persistence.session import get_session
+from app.infrastructure.persistence.student_history_reader import SqlAlchemyStudentHistoryReader
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.infrastructure.prompts.composer import TemplatePromptComposer
 from app.infrastructure.redis.inference_gate import RedisInferenceGate
@@ -55,6 +56,10 @@ def get_academic_repository(session: SessionDep) -> SqlAlchemyAcademicRepository
 
 def get_academic_reader(session: SessionDep) -> SqlAlchemyAcademicReader:
     return SqlAlchemyAcademicReader(session)
+
+
+def get_student_history_reader(session: SessionDep) -> SqlAlchemyStudentHistoryReader:
+    return SqlAlchemyStudentHistoryReader(session)
 
 
 def get_user_repository(session: SessionDep) -> SqlAlchemyUserRepository:
@@ -161,6 +166,9 @@ InferenceGateDep = Annotated[RedisInferenceGate, Depends(get_inference_gate)]
 LLMProviderDep = Annotated[LLMProvider, Depends(get_llm_provider)]
 PromptComposerDep = Annotated[TemplatePromptComposer, Depends(get_prompt_composer)]
 AcademicReaderDep = Annotated[SqlAlchemyAcademicReader, Depends(get_academic_reader)]
+StudentHistoryReaderDep = Annotated[
+    SqlAlchemyStudentHistoryReader, Depends(get_student_history_reader)
+]
 UserRepositoryDep = Annotated[SqlAlchemyUserRepository, Depends(get_user_repository)]
 MaterialRepositoryDep = Annotated[
     SqlAlchemyMaterialRepository, Depends(get_material_repository)

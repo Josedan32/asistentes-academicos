@@ -9,9 +9,14 @@ from app.domain.agents.modes import ChatMode
 class StudentContext:
     program_id: int
     current_semester: int
+    student_user_id: int | None = None
     active_course_id: int | None = None
     active_course_name: str | None = None
     mode: ChatMode = ChatMode.CONSULTA
+    # Course names the student is actually enrolled in this period — independent of the
+    # curriculum's "semester N" grouping, since real students drift from it. Kept short
+    # (names only) so it stays cheap to always include in the system prompt.
+    enrolled_course_names: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

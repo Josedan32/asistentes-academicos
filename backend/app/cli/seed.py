@@ -16,6 +16,9 @@ values used in local development.
 import asyncio
 import os
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.application.academic.commands import (
     AssignCourseToCurriculum,
     CreateCourse,
@@ -28,6 +31,10 @@ from app.domain.identity.entities import Role, User
 from app.domain.identity.exceptions import EmailAlreadyRegisteredError
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import SqlAlchemyAcademicRepository
+from app.infrastructure.persistence.models import (
+    AcademicHistoryRecordModel,
+    StudentEnrollmentModel,
+)
 from app.infrastructure.persistence.session import create_session_factory
 from app.infrastructure.persistence.user_repository import SqlAlchemyUserRepository
 from app.infrastructure.security.hasher import Argon2Hasher
@@ -188,6 +195,51 @@ ASSIGNMENTS = [
     ("FB0088", 10, 1, ("FB0087",)),
 ]
 
+# (period, course_code, status, grade, concept, times_taken) — the demo student's real
+# transcript, supplied directly by the project owner rather than parsed from an upload
+# (no transcript-import UI exists yet).
+ACADEMIC_HISTORY = [
+    ("20242", "ET0112", "Aprobada", 3.3, None, 1),
+    ("20242", "ET0120", "Aprobada", 4.0, None, 1),
+    ("20242", "ET0182", "Aprobada", 4.5, None, 1),
+    ("20242", "ET0220", "Aprobada", 4.1, None, 1),
+    ("20242", "ET0221", "Aprobada", 4.1, None, 1),
+    ("20242", "FB0004", "Aprobada", 4.8, None, 1),
+    ("20251", "ET0183", "Aprobada", 4.7, None, 1),
+    ("20251", "ET0184", "Aprobada", 4.3, None, 1),
+    ("20251", "ET0185", "Aprobada", 3.8, None, 1),
+    ("20251", "ET0186", "Aprobada", 4.8, None, 1),
+    ("20251", "FB0001", "Aprobada", 4.2, None, 1),
+    ("20252", "ET0047", "Aprobada", 4.0, None, 1),
+    ("20252", "ET0121", "Aprobada", 4.9, None, 1),
+    ("20252", "ET0187", "Aprobada", 4.0, None, 1),
+    ("20252", "FB0005", "Aprobada", 3.6, None, 1),
+    ("20252", "FB0007", "Aprobada", 3.2, None, 1),
+    ("20261", "ET0051", "Aprobada", 5.0, None, 1),
+    ("20261", "ET0062", "Aprobada", 4.4, None, 1),
+    ("20261", "ET0188", "Aprobada", 4.6, None, 1),
+    ("20261", "FB0008", "Aprobada", 4.1, None, 1),
+    ("20261", "FB0081", "Aprobada", 4.0, "Examen especial", 1),
+    ("20261", "FB0082", "Aprobada", 4.0, "Examen especial", 1),
+    ("20261", "FB0083", "Aprobada", 4.0, "Examen especial", 1),
+    ("20261", "FB0084", "Aprobada", 4.0, "Examen especial", 1),
+    ("20261", "FB0085", "Aprobada", 4.0, "Examen especial", 1),
+    ("20261", "FB0086", "Aprobada", 4.8, None, 1),
+]
+
+# (period, course_code, times_taken) — courses the student is actually registered in this
+# period. Independent of what the static curriculum lists for their current_semester: a
+# real student's pace (repeats, cancellations, testing out of levels early) can diverge
+# from that grouping, as it does here — Ingles 7 is nominally a semester-9 course.
+CURRENT_ENROLLMENTS = [
+    ("20262", "ET0113", 0),
+    ("20262", "ET0189", 0),
+    ("20262", "ET0190", 0),
+    ("20262", "ET0191", 0),
+    ("20262", "ET0192", 0),
+    ("20262", "FB0087", 0),
+]
+
 
 async def main() -> None:
     coordination_password = os.environ.get("SEED_COORDINATION_PASSWORD")
@@ -277,6 +329,72 @@ async def main() -> None:
                 print(f"created student account {STUDENT_EMAIL}")
             except EmailAlreadyRegisteredError:
                 print(f"skipped student account {STUDENT_EMAIL} (already exists)")
+
+        student = await users.find_by_email(STUDENT_EMAIL)
+        if student is None:
+            print(f"skipped academic history (student account {STUDENT_EMAIL} does not exist)")
+        else:
+            assert student.id is not None
+            await _seed_academic_history(session, student.id, created)
+            await _seed_current_enrollments(session, student.id, created)
+
+
+async def _seed_academic_history(
+    session: AsyncSession, student_user_id: int, course_ids: dict[str, int]
+) -> None:
+    existing = {
+        (row.course_id, row.period)
+        for row in (
+            await session.execute(
+                select(AcademicHistoryRecordModel).where(
+                    AcademicHistoryRecordModel.student_user_id == student_user_id
+                )
+            )
+        ).scalars()
+    }
+    added = 0
+    for period, code, status, grade, concept, times_taken in ACADEMIC_HISTORY:
+        course_id = course_ids.get(code)
+        if course_id is None or (course_id, period) in existing:
+            continue
+        session.add(
+            AcademicHistoryRecordModel(
+                student_user_id=student_user_id, course_id=course_id, period=period,
+                status=status, grade=grade, concept=concept, times_taken=times_taken,
+            )
+        )
+        added += 1
+    await session.commit()
+    print(f"seeded {added} academic history rows for {STUDENT_EMAIL}")
+
+
+async def _seed_current_enrollments(
+    session: AsyncSession, student_user_id: int, course_ids: dict[str, int]
+) -> None:
+    existing = {
+        (row.course_id, row.period)
+        for row in (
+            await session.execute(
+                select(StudentEnrollmentModel).where(
+                    StudentEnrollmentModel.student_user_id == student_user_id
+                )
+            )
+        ).scalars()
+    }
+    added = 0
+    for period, code, times_taken in CURRENT_ENROLLMENTS:
+        course_id = course_ids.get(code)
+        if course_id is None or (course_id, period) in existing:
+            continue
+        session.add(
+            StudentEnrollmentModel(
+                student_user_id=student_user_id, course_id=course_id, period=period,
+                times_taken=times_taken,
+            )
+        )
+        added += 1
+    await session.commit()
+    print(f"seeded {added} enrollment rows for {STUDENT_EMAIL}")
 
 
 if __name__ == "__main__":

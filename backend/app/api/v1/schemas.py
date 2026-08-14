@@ -189,3 +189,18 @@ class CourseMaterialOut(BaseModel):
     id: int
     course_id: int
     filename: str
+
+
+class ChatAttachmentOut(BaseModel):
+    filename: str
+    text: str
+
+
+class EnrollmentOut(BaseModel):
+    course_id: int
+    course_code: str
+    course_name: str
+    area: str
+    credits: int
+    period: str
+    times_taken: int

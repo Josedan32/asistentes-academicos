@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.v1.deps import (
     AcademicReaderDep,
     CurrentUser,
+    StudentHistoryReaderDep,
     UserRepositoryDep,
     require_authentication,
+    require_student,
 )
-from app.api.v1.schemas import MeOut
+from app.api.v1.schemas import EnrollmentOut, MeOut
 from app.application.academic.queries import GetProgram
 from app.domain.identity.entities import Role
 
@@ -39,3 +41,18 @@ async def get_me(
         document=profile.document, program_id=program.id, program_code=program.code,
         program_name=program.name, current_semester=profile.current_semester,
     )
+
+
+@router.get("/me/enrollments", response_model=list[EnrollmentOut])
+async def get_my_enrollments(
+    user: Annotated[CurrentUser, Depends(require_student)],
+    history_reader: StudentHistoryReaderDep,
+) -> list[EnrollmentOut]:
+    entries = await history_reader.enrollments_of(user.user_id)
+    return [
+        EnrollmentOut(
+            course_id=e.course_id, course_code=e.course_code, course_name=e.course_name,
+            area=e.area, credits=e.credits, period=e.period, times_taken=e.times_taken,
+        )
+        for e in entries
+    ]

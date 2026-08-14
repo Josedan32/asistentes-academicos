@@ -282,7 +282,7 @@ async def test_course_scoped_conversations_never_get_list_semester_courses(
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[0] == {
         "get_prerequisites", "get_course_detail", "find_course_in_programs",
-        "search_course_material",
+        "search_course_material", "get_academic_history",
     }
 
 
@@ -306,7 +306,7 @@ async def test_course_scoped_conversations_get_search_course_material(
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[-1] == {
         "search_course_material", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs",
+        "find_course_in_programs", "get_academic_history",
     }
 
 
@@ -328,7 +328,7 @@ async def test_general_conversations_still_get_list_semester_courses(
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[0] == {
         "list_semester_courses", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs",
+        "find_course_in_programs", "get_academic_history",
     }
 
 

@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.application.academic.ports import AcademicReader
+from app.application.academic.ports import AcademicReader, StudentHistoryReader
 from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMMessage
 from app.application.agents.material_ports import MaterialReader
@@ -29,15 +29,13 @@ from app.domain.agents.entities import Conversation, Message, MessageRole, ToolC
 MAX_ITERATIONS = 3
 TOOL_TIMEOUT_SECONDS = 10.0
 
-# Per-course conversations must never see list_semester_courses: it returns every course in
-# the student's semester (including unrelated ones like Ingles), and a course-scoped assistant
-# that can name other courses will answer with their content when asked something ambiguous —
-# a confirmed production bug (Algebra Lineal answering with English-course material).
 COURSE_SCOPED_TOOL_NAMES = {
     "search_course_material", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+    "get_academic_history",
 }
 GENERAL_TOOL_NAMES = {
     "list_semester_courses", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+    "get_academic_history",
 }
 
 
@@ -78,6 +76,7 @@ class AgentLoop:
     prompt_composer: PromptComposer
     material_reader: MaterialReader
     embedder: EmbeddingProvider
+    history_reader: StudentHistoryReader | None = None
 
     async def run(
         self,
@@ -150,13 +149,14 @@ class AgentLoop:
                         spec.handler(
                             ToolDependencies(
                                 reader=self.reader, material_reader=self.material_reader,
-                                embedder=self.embedder,
+                                embedder=self.embedder, history_reader=self.history_reader,
                             ),
                             args,
                             ToolContext(
                                 program_id=context.program_id,
                                 current_semester=context.current_semester,
                                 active_course_id=context.active_course_id,
+                                student_user_id=context.student_user_id,
                             ),
                         ),
                         timeout=TOOL_TIMEOUT_SECONDS,
@@ -167,12 +167,6 @@ class AgentLoop:
                                                 tool_call_id=call.id, content=error_text))
                     continue
                 except Exception as error:
-                    # search_course_material can raise from OllamaEmbeddingProvider.embed's
-                    # raise_for_status() (e.g. model not pulled, connection error) — every
-                    # pre-existing tool only ever touched SQLite, so this branch didn't exist
-                    # before. A single tool's failure must not abort the whole turn: return a
-                    # tool error the model can react to, same as the timeout case above,
-                    # instead of letting it propagate past chat.py's SSE stream (finding 4).
                     error_text = json.dumps({"error": str(error)})
                     messages.append(LLMMessage(role="tool", name=call.name,
                                                 tool_call_id=call.id, content=error_text))

@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 from anyio import CancelScope
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.deps import (
@@ -17,11 +17,13 @@ from app.api.v1.deps import (
     LLMProviderDep,
     MaterialReaderDep,
     PromptComposerDep,
+    StudentHistoryReaderDep,
     UserRepositoryDep,
     require_authentication,
     require_student,
 )
 from app.api.v1.schemas import (
+    ChatAttachmentOut,
     ChatIn,
     ConversationDetailOut,
     ConversationSummaryOut,
@@ -32,10 +34,14 @@ from app.api.v1.schemas import (
 )
 from app.application.agents.agent_loop import AgentLoop, DoneEvent, ThinkingEvent, ToolCallEvent
 from app.application.agents.dto import StudentContext
+from app.application.agents.text_extraction import UnsupportedMaterialFormatError, extract_text
 from app.domain.agents.entities import Conversation, FeedbackValue, MessageFeedback
 from app.domain.agents.modes import ChatMode
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
+
+MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
+MAX_ATTACHMENT_CHARS = 6000
 
 ESTIMATED_SECONDS_PER_TURN = 5
 QUEUE_POLL_SECONDS = 0.5
@@ -49,6 +55,32 @@ async def get_model(
     provider: LLMProviderDep,
 ) -> dict[str, str]:
     return {"model": provider.model}
+
+
+@router.post("/attachments")
+async def upload_chat_attachment(
+    user: Annotated[CurrentUser, Depends(require_student)],
+    file: Annotated[UploadFile, File()],
+) -> ChatAttachmentOut:
+    """Extracts a student-uploaded file's text so the frontend can fold it into a single
+    chat message — nothing here is persisted server-side beyond that one message. This is
+    deliberately not course material: it is scoped to whichever conversation the student
+    attaches it in, never indexed for search or shared with other students."""
+    content = await file.read()
+    if len(content) > MAX_ATTACHMENT_BYTES:
+        raise HTTPException(
+            status.HTTP_413_CONTENT_TOO_LARGE, detail="Attachment exceeds the 10 MB limit"
+        )
+    try:
+        text = extract_text(file.filename or "archivo", content)
+    except UnsupportedMaterialFormatError as error:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
+
+    if len(text) > MAX_ATTACHMENT_CHARS:
+        text = text[:MAX_ATTACHMENT_CHARS] + "\n\n[...contenido truncado por longitud...]"
+    return ChatAttachmentOut(filename=file.filename or "archivo", text=text)
 
 
 def _sse(event: str, data: dict[str, Any]) -> bytes:
@@ -75,6 +107,7 @@ async def chat(
     gate: InferenceGateDep,
     material_reader: MaterialReaderDep,
     embedder: EmbeddingProviderDep,
+    history_reader: StudentHistoryReaderDep,
 ) -> StreamingResponse:
     profile = await users.find_profile_by_user_id(user.user_id)
     if profile is None:
@@ -87,13 +120,6 @@ async def chat(
         history = await conversation_reader.history(payload.conversation_id)
     else:
         if payload.course_id is not None:
-            # course_id is the only gate on which course's uploaded material
-            # search_course_material can read (finding 6 of the final review) — it must
-            # belong to the student's own program curriculum, not just exist in the
-            # catalogue. course_detail(course_id, program_id) returns credits=None when
-            # the course isn't linked to that program's curriculum (CurriculumEntryModel
-            # .credits is non-nullable), the same signal get_course_detail already relies
-            # on for out-of-curriculum credits.
             course_in_curriculum = await reader.course_detail(
                 payload.course_id, profile.program_id
             )
@@ -107,9 +133,6 @@ async def chat(
         )
         history = []
 
-    # active_course_id always comes from the persisted conversation, not the request payload:
-    # payload.course_id is only meaningful the moment a new conversation is created, and is
-    # None on every later turn of the same conversation.
     active_course_name = None
     if conversation.course_id is not None:
         course = await reader.course_detail(conversation.course_id)
@@ -120,26 +143,22 @@ async def chat(
     except ValueError:
         mode = ChatMode.CONSULTA
 
-    # Defense in depth: a general (non-course) conversation must never be framed in a
-    # course-scoped mode like Examen/Practica, which instructs the model to call
-    # search_course_material — a tool absent from GENERAL_TOOL_NAMES. Any client sending
-    # a stale/forged mode for a general conversation is overridden server-side, not just
-    # the current frontend's own reset() (finding 1 of the final review).
     if conversation.course_id is None:
         mode = ChatMode.CONSULTA
 
+    enrolled_course_names = tuple(
+        entry.course_name for entry in await history_reader.enrollments_of(user.user_id)
+    )
+
     context = StudentContext(
         program_id=profile.program_id, current_semester=profile.current_semester,
+        student_user_id=user.user_id,
         active_course_id=conversation.course_id, active_course_name=active_course_name,
-        mode=mode,
+        mode=mode, enrolled_course_names=enrolled_course_names,
     )
 
     async def stream() -> AsyncIterator[bytes]:
         ticket = await gate.enqueue()
-        # Everything from here on must funnel exceptions into an `error` SSE event rather
-        # than propagating: the stream has already started, so a normal HTTP error response
-        # is no longer possible (spec §9.2). This also covers pre-loop failures such as
-        # `provider.is_loaded()` raising (e.g. Ollama unreachable), not just `AgentLoop.run`.
         try:
             for _ in range(MAX_QUEUE_POLL_ITERATIONS):
                 position = await gate.position(ticket)
@@ -160,7 +179,7 @@ async def chat(
 
             loop = AgentLoop(provider=provider, reader=reader, conversations=conversations,
                               prompt_composer=prompt_composer, material_reader=material_reader,
-                              embedder=embedder)
+                              embedder=embedder, history_reader=history_reader)
             async for event in loop.run(conversation=conversation, history=history,
                                          user_message=payload.message, context=context):
                 if isinstance(event, ThinkingEvent):
@@ -181,10 +200,6 @@ async def chat(
         except Exception as error:
             yield _sse("error", {"code": "agent_loop_failed", "message": str(error)})
         finally:
-            # Shielded: on client disconnect the ASGI server may cancel this task group
-            # outright, and an unshielded `await` here would raise at its first checkpoint
-            # before the Redis ZREM runs — leaking the ticket and blocking every other
-            # queued request behind it, since RedisInferenceGate sets no TTL on entries.
             with CancelScope(shield=True):
                 await gate.release(ticket)
 

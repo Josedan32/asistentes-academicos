@@ -1,5 +1,6 @@
 from app.application.agents.tools import (
     find_course_in_programs,
+    get_academic_history,
     get_course_detail,
     get_prerequisites,
     list_semester_courses,
@@ -14,5 +15,6 @@ TOOLS.update(
         "get_course_detail": get_course_detail.SPEC,
         "find_course_in_programs": find_course_in_programs.SPEC,
         "search_course_material": search_course_material.SPEC,
+        "get_academic_history": get_academic_history.SPEC,
     }
 )
