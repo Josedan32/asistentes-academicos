@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { normalizeLatexDelimiters } from "@/lib/normalize-latex-delimiters";
 
+const KATEX_OPTIONS = { throwOnError: false, errorColor: "#7D6A2E", strict: false as const };
+
 /** Renders the assistant's response as structured Markdown instead of raw text — the model
  * naturally answers with **bold** terms, numbered/bulleted lists, ## subtitles and math
  * (per the system prompt), and showing that markup literally reads as broken. Every element
@@ -11,10 +13,15 @@ import { normalizeLatexDelimiters } from "@/lib/normalize-latex-delimiters";
  * don't clash with the design. */
 export function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="flex flex-col gap-2 text-[15.5px] leading-[1.65] text-text-body">
+    <div className="flex flex-col gap-2 text-[15.5px] leading-[1.65] text-text-body
+                    [&_.katex-display]:my-1 [&_.katex-display]:overflow-x-auto
+                    [&_.katex-display]:overflow-y-hidden [&_.katex-display]:rounded-[8px]
+                    [&_.katex-display]:border [&_.katex-display]:border-border-control
+                    [&_.katex-display]:bg-tool-bg [&_.katex-display]:px-4
+                    [&_.katex-display]:py-[10px]">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[[rehypeKatex, KATEX_OPTIONS]]}
         components={{
           h1: ({ children }) => (
             <h2 className="m-0 mt-2 text-[18px] font-semibold text-navy first:mt-0">

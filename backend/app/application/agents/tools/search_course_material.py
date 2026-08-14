@@ -30,11 +30,6 @@ async def _run(
 ) -> dict[str, Any]:
     course_id = context.active_course_id
     if args.course is not None and context.active_course_id is not None:
-        # Resolve `course` only against the active course's own prerequisites, never the
-        # full catalogue: `course_candidates()` returns every course in the system, and
-        # resolving against it would let a course-scoped assistant search an unrelated
-        # course's material (e.g. Algebra Lineal reading Ingles material) — the exact
-        # cross-course leak this tool exists to prevent, per finding 2 of the final review.
         prerequisites = await deps.reader.prerequisites_of(
             context.program_id, context.active_course_id
         )
@@ -50,7 +45,7 @@ async def _run(
         return {"fragments": []}
 
     query_embedding = (await deps.embedder.embed([args.query]))[0]
-    chunks = await deps.material_reader.search(course_id, query_embedding, limit=5)
+    chunks = await deps.material_reader.search(course_id, query_embedding, limit=8)
     return {
         "fragments": [{"text": chunk.text, "page": chunk.page} for chunk in chunks]
     }

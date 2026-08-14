@@ -28,14 +28,13 @@ describe("ExerciseCard", () => {
     expect(screen.getByPlaceholderText(/tu respuesta/i)).toHaveValue("");
   });
 
-  it("shows nothing to answer when no fragments were found", () => {
-    render(
+  it("renders nothing when no fragments were found", () => {
+    const { container } = render(
       <ExerciseCard
         toolCall={{ ...toolCall, result: { fragments: [] }, row_count: 0 }}
         onSubmitAnswer={() => {}}
       />
     );
-    expect(screen.getByText(/no encontré un ejercicio/i)).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/tu respuesta/i)).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 });

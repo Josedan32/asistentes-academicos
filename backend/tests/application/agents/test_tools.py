@@ -141,6 +141,52 @@ async def test_get_course_detail_uses_the_injected_program_id_for_credits(
     assert in_software.credits == 4
 
 
+async def test_get_course_detail_falls_back_to_the_active_course_when_omitted(
+    session: AsyncSession,
+) -> None:
+    software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
+    course = CourseModel(
+        code="ALG", name="Algebra Lineal", normalized_name=normalize_name("Algebra Lineal"),
+        area="Matematicas", default_credits=4,
+    )
+    session.add_all([software, course])
+    await session.commit()
+    session.add(
+        CurriculumEntryModel(program_id=software.id, course_id=course.id, semester=5, credits=4)
+    )
+    await session.commit()
+
+    reader = SqlAlchemyAcademicReader(session)
+    spec = TOOLS["get_course_detail"]
+    args = spec.argument_model()
+
+    detail = await spec.handler(
+        _deps(reader), args,
+        ToolContext(program_id=software.id, current_semester=5, active_course_id=course.id),
+    )
+
+    assert detail is not None
+    assert detail.name == "Algebra Lineal"
+
+
+async def test_get_course_detail_returns_none_when_omitted_without_an_active_course(
+    session: AsyncSession,
+) -> None:
+    software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
+    session.add(software)
+    await session.commit()
+
+    reader = SqlAlchemyAcademicReader(session)
+    spec = TOOLS["get_course_detail"]
+    args = spec.argument_model()
+
+    detail = await spec.handler(
+        _deps(reader), args, ToolContext(program_id=software.id, current_semester=5)
+    )
+
+    assert detail is None
+
+
 async def test_list_semester_courses_uses_the_injected_program_id(session: AsyncSession) -> None:
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     electronics = ProgramModel(code="IEL", name="Ingenieria Electronica", semester_count=10)
