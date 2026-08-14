@@ -364,6 +364,46 @@ async def test_search_course_material_uses_the_active_course_by_default(
     assert result["fragments"][0]["text"] == "que es normalizacion"
 
 
+async def test_search_course_material_deduplicates_identical_chunk_text(
+    session: AsyncSession,
+) -> None:
+    """Regression test: duplicate rows in material_chunks (e.g. from a re-ingested
+    material) must not surface the same fragment twice in the exercise the student sees."""
+    course = CourseModel(
+        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos", default_credits=4,
+    )
+    session.add(course)
+    await session.commit()
+
+    material_repository = SqlAlchemyMaterialRepository(session)
+    material = await material_repository.add_material(
+        CourseMaterial(course_id=course.id, filename="guia.pdf")
+    )
+    assert material.id is not None
+    await material_repository.add_chunks([
+        MaterialChunk(material_id=material.id, course_id=course.id, sequence=1, page=None,
+                       text="que es normalizacion", embedding=[1.0, 0.0]),
+        MaterialChunk(material_id=material.id, course_id=course.id, sequence=2, page=None,
+                       text="que es normalizacion", embedding=[1.0, 0.0]),
+    ])
+
+    reader = SqlAlchemyAcademicReader(session)
+    material_reader = SqlAlchemyMaterialReader(session)
+    spec = TOOLS["search_course_material"]
+    args = spec.argument_model(query="que es normalizacion")
+    deps = ToolDependencies(
+        reader=reader, material_reader=material_reader, embedder=FakeEmbeddingProvider(dimensions=2)
+    )
+
+    result = await spec.handler(
+        deps, args,
+        ToolContext(program_id=1, current_semester=1, active_course_id=course.id),
+    )
+
+    assert len(result["fragments"]) == 1
+
+
 async def test_search_course_material_searches_a_named_course_instead_of_the_active_one(
     session: AsyncSession,
 ) -> None:

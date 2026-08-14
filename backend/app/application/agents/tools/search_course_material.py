@@ -46,9 +46,14 @@ async def _run(
 
     query_embedding = (await deps.embedder.embed([args.query]))[0]
     chunks = await deps.material_reader.search(course_id, query_embedding, limit=8)
-    return {
-        "fragments": [{"text": chunk.text, "page": chunk.page} for chunk in chunks]
-    }
+    seen_text: set[str] = set()
+    fragments = []
+    for chunk in chunks:
+        if chunk.text in seen_text:
+            continue
+        seen_text.add(chunk.text)
+        fragments.append({"text": chunk.text, "page": chunk.page})
+    return {"fragments": fragments}
 
 
 SPEC = ToolSpec(
