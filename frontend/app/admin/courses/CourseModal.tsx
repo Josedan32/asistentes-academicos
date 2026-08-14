@@ -24,6 +24,7 @@ export function CourseModal({
   const [credits, setCredits] = useState(course?.default_credits ?? 4);
   const [area, setArea] = useState(course?.area ?? AREAS[0]);
   const [materialError, setMaterialError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const queryClient = useQueryClient();
   const materialsQuery = useQuery({
@@ -35,6 +36,7 @@ export function CourseModal({
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || course === null) return;
+    setIsUploading(true);
     try {
       await uploadMaterial(course.id, file);
       await queryClient.invalidateQueries({ queryKey: ["course-materials", course.id] });
@@ -42,6 +44,7 @@ export function CourseModal({
     } catch {
       setMaterialError("No se pudo subir el archivo. Verifica el formato (solo PDF o Word).");
     } finally {
+      setIsUploading(false);
       event.target.value = "";
     }
   }
@@ -109,11 +112,21 @@ export function CourseModal({
               {materialError && (
                 <div className="text-[13px] font-medium text-error-accent">{materialError}</div>
               )}
-              <label className="flex h-10 cursor-pointer items-center justify-center rounded-control
-                                 border border-dashed border-border-dashed text-[13px] font-medium
-                                 text-text-secondary hover:border-accent hover:text-accent">
-                + Subir PDF o Word
-                <input type="file" accept=".pdf,.docx" onChange={handleUpload} className="hidden" />
+              {isUploading && (
+                <div className="text-[13px] font-medium text-text-secondary">
+                  Subiendo y procesando el material... esto puede tardar varios minutos, no
+                  cierres esta ventana.
+                </div>
+              )}
+              <label className={`flex h-10 items-center justify-center rounded-control border
+                                  border-dashed border-border-dashed text-[13px] font-medium ${
+                                    isUploading
+                                      ? "cursor-not-allowed text-text-tertiary"
+                                      : "cursor-pointer text-text-secondary hover:border-accent hover:text-accent"
+                                  }`}>
+                {isUploading ? "Procesando..." : "+ Subir PDF o Word"}
+                <input type="file" accept=".pdf,.docx" onChange={handleUpload}
+                       disabled={isUploading} className="hidden" />
               </label>
             </div>
           )}
