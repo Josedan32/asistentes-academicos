@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
-import { getMe } from "@/lib/api/me";
+import { getMe, listMyEnrollments } from "@/lib/api/me";
 import { listConversations } from "@/lib/api/conversations";
-import { listCurriculum } from "@/lib/api/programs";
 import { relativeDate } from "@/lib/relative-date";
 import { useAuth } from "@/lib/hooks/useAuth";
 import type { ActiveAssistant } from "@/lib/assistant-identity";
@@ -27,11 +26,10 @@ export function Sidebar({
   const { logout } = useAuth();
   const [assistantsExpanded, setAssistantsExpanded] = useState(true);
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
-  const curriculumQuery = useQuery({
-    queryKey: ["curriculum", meQuery.data?.program_id, meQuery.data?.current_semester],
-    queryFn: () =>
-      listCurriculum(meQuery.data!.program_id as number, meQuery.data!.current_semester as number),
-    enabled: !!meQuery.data?.program_id && !!meQuery.data?.current_semester,
+  const enrollmentsQuery = useQuery({
+    queryKey: ["my-enrollments"],
+    queryFn: listMyEnrollments,
+    enabled: meQuery.data?.role === "student",
   });
   const conversationsQuery = useQuery({
     queryKey: ["conversations"], queryFn: listConversations,
@@ -82,24 +80,25 @@ export function Sidebar({
 
           {assistantsExpanded && (
             <>
-              {meQuery.data?.current_semester != null && (
+              {(enrollmentsQuery.data?.length ?? 0) > 0 && (
                 <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.1em]
                                  text-accent-muted">
-                  Materias · semestre {meQuery.data.current_semester}
+                  Materias matriculadas
                 </div>
               )}
 
               <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
-                {(curriculumQuery.data ?? []).map((course) => {
+                {(enrollmentsQuery.data ?? []).map((enrollment) => {
                   const isActive = activeAssistant.type === "course" &&
-                    activeAssistant.courseId === course.id;
+                    activeAssistant.courseId === enrollment.course_id;
                   return (
                     <button
-                      key={course.id}
+                      key={enrollment.course_id}
                       onClick={() =>
-                        onSelectAssistant(
-                          { type: "course", courseId: course.id, courseName: course.name }
-                        )
+                        onSelectAssistant({
+                          type: "course", courseId: enrollment.course_id,
+                          courseName: enrollment.course_name,
+                        })
                       }
                       className={
                         isActive
@@ -110,7 +109,7 @@ export function Sidebar({
                       }
                     >
                       <span className="h-[7px] w-[7px] flex-none rounded-full bg-[#3F6693]" />
-                      <span className="truncate text-[14px]">{course.name}</span>
+                      <span className="truncate text-[14px]">{enrollment.course_name}</span>
                     </button>
                   );
                 })}

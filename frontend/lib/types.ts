@@ -43,6 +43,16 @@ export interface SemesterCourseOut {
   semester: number;
 }
 
+export interface EnrollmentOut {
+  course_id: number;
+  course_code: string;
+  course_name: string;
+  area: string;
+  credits: number;
+  period: string;
+  times_taken: number;
+}
+
 export interface CurriculumBoardPrerequisiteOut {
   course_id: number;
   course_code: string;

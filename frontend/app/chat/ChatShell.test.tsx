@@ -35,7 +35,7 @@ describe("ChatShell", () => {
         }));
       }
       if (url.includes("/api/v1/chat/model")) return Promise.resolve(jsonResponse({ model: "qwen2.5:3b" }));
-      if (url.includes("/curriculum?semester=5")) return Promise.resolve(jsonResponse([]));
+      if (url.endsWith("/api/v1/me/enrollments")) return Promise.resolve(jsonResponse([]));
       if (url.endsWith("/api/v1/chat/conversations")) return Promise.resolve(jsonResponse([]));
       return Promise.resolve(jsonResponse({}));
     }));
@@ -76,7 +76,7 @@ describe("ChatShell", () => {
         }));
       }
       if (url.includes("/api/v1/chat/model")) return Promise.resolve(jsonResponse({ model: "qwen2.5:3b" }));
-      if (url.includes("/curriculum?semester=5")) return Promise.resolve(jsonResponse([]));
+      if (url.endsWith("/api/v1/me/enrollments")) return Promise.resolve(jsonResponse([]));
       if (url.endsWith("/api/v1/chat/conversations")) return Promise.resolve(jsonResponse([]));
       return Promise.resolve(jsonResponse({}));
     });
