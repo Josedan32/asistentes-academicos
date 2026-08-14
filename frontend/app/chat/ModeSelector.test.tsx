@@ -4,20 +4,26 @@ import { describe, expect, it, vi } from "vitest";
 import { ModeSelector } from "./ModeSelector";
 
 describe("ModeSelector", () => {
-  it("shows all five modes and calls onModeChange when one is picked", async () => {
+  it("opens the dropdown and calls onModeChange when a mode is picked", async () => {
     const onModeChange = vi.fn();
     const user = userEvent.setup();
     render(<ModeSelector mode="consulta" onModeChange={onModeChange} disabled={false} />);
 
-    await user.click(screen.getByRole("button", { name: /práctica/i }));
+    await user.click(screen.getByRole("button", { name: /modo del asistente/i }));
+    await user.click(await screen.findByRole("menuitem", { name: /práctica/i }));
 
     expect(onModeChange).toHaveBeenCalledWith("practica");
   });
 
-  it("disables every button while busy", () => {
+  it("labels the trigger with the active mode", () => {
+    render(<ModeSelector mode="examen" onModeChange={() => {}} disabled={false} />);
+    expect(
+      screen.getByRole("button", { name: /modo del asistente: examen/i })
+    ).toBeInTheDocument();
+  });
+
+  it("disables the trigger while busy", () => {
     render(<ModeSelector mode="consulta" onModeChange={() => {}} disabled />);
-    for (const button of screen.getAllByRole("button")) {
-      expect(button).toBeDisabled();
-    }
+    expect(screen.getByRole("button", { name: /modo del asistente/i })).toBeDisabled();
   });
 });

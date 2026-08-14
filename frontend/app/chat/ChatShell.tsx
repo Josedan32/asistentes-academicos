@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireRole } from "@/lib/hooks/useRequireRole";
@@ -14,6 +14,7 @@ import { MessageThread } from "./MessageThread";
 import { StatusBanner } from "./StatusBanner";
 import { Composer } from "./Composer";
 import { FeedbackControls } from "./FeedbackControls";
+import { ModeSelector } from "./ModeSelector";
 
 export function ChatShell({
   initialConversationId = null,
@@ -27,6 +28,26 @@ export function ChatShell({
 
   const courseId = activeAssistant.type === "course" ? activeAssistant.courseId : null;
   const stream = useChatStream(courseId);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function handleScroll() {
+      const distanceFromBottom = el!.scrollHeight - el!.scrollTop - el!.clientHeight;
+      stickToBottomRef.current = distanceFromBottom < 80;
+    }
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !stickToBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [stream.messages]);
 
   useEffect(() => {
     if (initialConversationId === null) return;
@@ -88,15 +109,9 @@ export function ChatShell({
         onSelectConversation={handleSelectConversation}
       />
       <div className="flex min-h-0 min-w-0 flex-col bg-app-bg">
-        <ChatHeader
-          activeAssistant={activeAssistant}
-          runState={stream.runState}
-          mode={stream.mode}
-          onModeChange={stream.setMode}
-          showModeSelector={activeAssistant.type === "course"}
-        />
+        <ChatHeader activeAssistant={activeAssistant} runState={stream.runState} />
 
-        <div className="flex-1 overflow-auto py-7">
+        <div ref={scrollRef} className="flex-1 overflow-auto py-7">
           <div className="mx-auto flex max-w-[800px] flex-col gap-[22px] px-6">
             <MessageThread
               messages={stream.messages}
@@ -120,7 +135,17 @@ export function ChatShell({
               thinkingTool={stream.thinkingTool} errorInfo={stream.errorInfo}
               onStop={stream.stop} onRetry={stream.clearError}
             />
-            <Composer runState={stream.runState} onSend={stream.send} onStop={stream.stop} />
+            <Composer
+              runState={stream.runState} onSend={stream.send} onStop={stream.stop}
+              modeSelector={
+                activeAssistant.type === "course" ? (
+                  <ModeSelector
+                    mode={stream.mode} onModeChange={stream.setMode}
+                    disabled={stream.runState !== "idle"}
+                  />
+                ) : undefined
+              }
+            />
           </div>
         </div>
       </div>

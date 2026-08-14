@@ -24,7 +24,7 @@ export function AssistantMessage({
     <div className="flex items-start gap-3">
       <AssistantAvatar size={32} state={avatarState} />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {message.toolCalls.map((toolCall, index) =>
+        {message.toolCalls.map((toolCall) =>
           toolCall.name === "search_course_material" && (mode === "practica" || mode === "examen")
             ? (
               <ExerciseCard
@@ -32,7 +32,7 @@ export function AssistantMessage({
                 onSubmitAnswer={(answer) => onSubmitAnswer?.(answer)}
               />
             )
-            : <ToolCallCard key={toolCall.id} toolCall={toolCall} defaultOpen={index === 0} />
+            : <ToolCallCard key={toolCall.id} toolCall={toolCall} />
         )}
 
         {visibleContent && (

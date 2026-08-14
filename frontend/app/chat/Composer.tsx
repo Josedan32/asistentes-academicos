@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import type { RunState } from "@/lib/hooks/useChatStream";
 
 const BUSY_STATES: RunState[] = ["loading_model", "thinking", "queued", "streaming"];
 
 export function Composer({
-  runState, onSend, onStop,
+  runState, onSend, onStop, modeSelector,
 }: {
   runState: RunState;
   onSend: (text: string) => void;
   onStop: () => void;
+  modeSelector?: React.ReactNode;
 }) {
   const [value, setValue] = useState("");
   const busy = BUSY_STATES.includes(runState);
@@ -41,6 +42,7 @@ export function Composer({
     <div className="flex flex-col gap-3">
       <div className="flex items-end gap-3 rounded-container border border-border-control
                        bg-surface p-[12px_14px]">
+        {modeSelector}
         <textarea
           value={value}
           onChange={(event) => setValue(event.target.value)}
@@ -53,10 +55,11 @@ export function Composer({
         {busy ? (
           <button
             onClick={onStop}
+            aria-label="Detener respuesta"
             className="flex h-10 w-10 flex-none items-center justify-center rounded-[9px]
                        bg-error-accent text-[13px] text-white"
           >
-            ■
+            <Square className="h-[15px] w-[15px] fill-current" />
           </button>
         ) : (
           <button

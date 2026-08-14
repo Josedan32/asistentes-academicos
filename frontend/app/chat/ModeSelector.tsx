@@ -1,5 +1,7 @@
 "use client";
 
+import { Check, SlidersHorizontal } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import type { ChatMode } from "@/lib/hooks/useChatStream";
 
 const MODES: { value: ChatMode; label: string }[] = [
@@ -17,24 +19,45 @@ export function ModeSelector({
   onModeChange: (mode: ChatMode) => void;
   disabled: boolean;
 }) {
+  const activeLabel = MODES.find((option) => option.value === mode)?.label ?? "Consulta";
+
   return (
-    <div className="flex flex-none items-center gap-1 rounded-control border border-border-control
-                     bg-app-bg p-[3px]">
-      {MODES.map((option) => (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
         <button
-          key={option.value}
+          type="button"
           disabled={disabled}
-          onClick={() => onModeChange(option.value)}
-          className={
-            option.value === mode
-              ? "rounded-[6px] bg-navy px-[10px] py-[6px] text-[12.5px] font-semibold text-white"
-              : "rounded-[6px] px-[10px] py-[6px] text-[12.5px] font-medium text-text-secondary " +
-                "hover:bg-surface disabled:opacity-50"
-          }
+          aria-label={`Modo del asistente: ${activeLabel}`}
+          title={`Modo: ${activeLabel}`}
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-[9px] border
+                     border-border-control bg-app-bg text-text-secondary hover:bg-surface
+                     disabled:opacity-50"
         >
-          {option.label}
+          <SlidersHorizontal className="h-[17px] w-[17px]" />
         </button>
-      ))}
-    </div>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          side="top"
+          sideOffset={8}
+          className="z-50 min-w-[168px] rounded-[10px] border border-border bg-surface p-1
+                     shadow-lg"
+        >
+          {MODES.map((option) => (
+            <DropdownMenu.Item
+              key={option.value}
+              onSelect={() => onModeChange(option.value)}
+              className="flex cursor-pointer items-center justify-between gap-2 rounded-[7px]
+                         px-[10px] py-[8px] text-[13.5px] font-medium text-navy outline-none
+                         hover:bg-app-bg data-[highlighted]:bg-app-bg"
+            >
+              {option.label}
+              {option.value === mode && <Check className="h-[14px] w-[14px] text-accent" />}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
