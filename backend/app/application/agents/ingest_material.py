@@ -16,6 +16,11 @@ class IngestCourseMaterial:
         text = extract_text(filename, content)  # raises before any write, per the test above
         chunks = chunk_text(text)
 
+        existing = await self.repository.find_by_filename(course_id, filename)
+        if existing is not None:
+            assert existing.id is not None
+            await self.repository.delete_material(existing.id)
+
         material = await self.repository.add_material(
             CourseMaterial(course_id=course_id, filename=filename)
         )
@@ -34,11 +39,6 @@ class IngestCourseMaterial:
                     )
                 ])
             except Exception:
-                # An embedding failure (e.g. Ollama down, model not pulled) must not leave a
-                # zombie material row with zero chunks: the admin UI would list it as if
-                # upload succeeded, while search_course_material would silently return
-                # nothing for it forever. Undo the just-created row and re-raise so the
-                # caller sees the failure instead of a false success.
                 await self.repository.delete_material(material.id)
                 raise
 

@@ -54,3 +54,27 @@ async def test_deleting_a_material_cascades_its_chunks(session: AsyncSession) ->
 
     reader = SqlAlchemyMaterialReader(session)
     assert await reader.list_materials(course.id) == []
+
+
+async def test_find_by_filename_returns_none_when_no_material_matches(
+    session: AsyncSession,
+) -> None:
+    course = CourseModel(code="BD2", name="Base de Datos 2", area="Datos", default_credits=4)
+    session.add(course)
+    await session.commit()
+
+    repository = SqlAlchemyMaterialRepository(session)
+    assert await repository.find_by_filename(course.id, "guia.pdf") is None
+
+
+async def test_find_by_filename_returns_the_matching_material(session: AsyncSession) -> None:
+    course = CourseModel(code="BD2", name="Base de Datos 2", area="Datos", default_credits=4)
+    session.add(course)
+    await session.commit()
+
+    repository = SqlAlchemyMaterialRepository(session)
+    await repository.add_material(CourseMaterial(course_id=course.id, filename="guia.pdf"))
+
+    found = await repository.find_by_filename(course.id, "guia.pdf")
+    assert found is not None
+    assert found.filename == "guia.pdf"

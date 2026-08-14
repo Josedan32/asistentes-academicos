@@ -12,6 +12,12 @@ class FakeMaterialRepository:
     chunks: list[MaterialChunk] = field(default_factory=list)
     next_id: int = 1
 
+    async def find_by_filename(self, course_id: int, filename: str) -> CourseMaterial | None:
+        return next(
+            (m for m in self.materials if m.course_id == course_id and m.filename == filename),
+            None,
+        )
+
     async def add_material(self, material: CourseMaterial) -> CourseMaterial:
         from dataclasses import replace
         saved = replace(material, id=self.next_id)
@@ -89,3 +95,23 @@ async def test_a_failed_embedding_leaves_no_orphan_material_row() -> None:
 
     assert repository.materials == []
     assert repository.chunks == []
+
+
+async def test_reuploading_same_filename_replaces_old_chunks_instead_of_doubling() -> None:
+    repository = FakeMaterialRepository()
+    embedder = FakeEmbeddingProvider()
+    command = IngestCourseMaterial(repository=repository, embedder=embedder)
+
+    pdf_bytes = (
+        __import__("pathlib").Path(__file__).resolve().parents[2]
+        / "fixtures" / "sample.pdf"
+    ).read_bytes()
+
+    first = await command.execute(course_id=7, filename="guia.pdf", content=pdf_bytes)
+    chunk_count = len(repository.chunks)
+    second = await command.execute(course_id=7, filename="guia.pdf", content=pdf_bytes)
+
+    assert first.id != second.id
+    assert len(repository.materials) == 1
+    assert len(repository.chunks) == chunk_count
+    assert all(chunk.material_id == second.id for chunk in repository.chunks)
