@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { streamChat } from "@/lib/api/chat-stream";
 import { getSessionMode, setSessionMode } from "@/lib/chat-session-state";
+import { mergeAssistantTurns } from "@/lib/merge-assistant-turns";
 import type { ConversationDetailOut } from "@/lib/types";
 
 export type RunState = "idle" | "queued" | "loading_model" | "thinking" | "streaming" | "error";
@@ -80,7 +81,7 @@ export function useChatStream(courseId: number | null) {
     sendingRef.current = false;
     setConversationId(detail.id);
     setMessages(
-      detail.messages.map((message) => ({
+      mergeAssistantTurns(detail.messages).map((message) => ({
         id: message.id, role: message.role, content: message.content,
         toolCalls: message.tool_calls.map((toolCall) => ({
           id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments,

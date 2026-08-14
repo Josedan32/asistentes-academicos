@@ -119,9 +119,10 @@ class AgentLoop:
                                  hit_iteration_cap=False, message_id=saved.id)
                 return
 
+            # Empty content: this row only anchors tool calls, never a visible reply.
             assistant_row = await self.conversations.add_message(
                 Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
-                        content=response.content or "", prompt_version=prompt_version)
+                        content="", prompt_version=prompt_version)
             )
             messages.append(LLMMessage(role="assistant", content=response.content or ""))
 

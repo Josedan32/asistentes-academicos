@@ -117,6 +117,32 @@ async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(
     assert conversations.tool_calls[0].message_id == conversations.messages[1].id
 
 
+async def test_commentary_alongside_a_tool_call_is_not_persisted_as_a_second_reply(
+    session: AsyncSession,
+) -> None:
+    """qwen2.5:3b sometimes emits text in the same completion as a tool call. That text is
+    never streamed to the client (only the final DoneEvent's content is), so persisting it
+    would surface a second, silent reply once the conversation is reloaded from history."""
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[
+        LLMResponse(content="Dejame revisar tus materias...", tool_calls=[
+            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+        ]),
+        LLMResponse(content="Tienes 1 materia."),
+    ])
+    conversations = InMemoryConversationRepository()
+    conversation = Conversation(id=1, user_id=1, course_id=None, title="t")
+
+    async for _ in _loop(provider, reader, conversations).run(
+        conversation=conversation, history=[], user_message="Que veo este semestre?",
+        context=StudentContext(program_id=program_id, current_semester=4),
+    ):
+        pass
+
+    assistant_messages = [m for m in conversations.messages if m.role.value == "assistant"]
+    assert [m.content for m in assistant_messages] == ["", "Tienes 1 materia."]
+
+
 async def test_invalid_arguments_return_a_tool_error_to_the_model_not_an_exception(
     session: AsyncSession,
 ) -> None:
