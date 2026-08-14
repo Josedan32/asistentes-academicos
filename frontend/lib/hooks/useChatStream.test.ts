@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSessionAssistant, setSessionMode } from "@/lib/chat-session-state";
 import { useChatStream } from "./useChatStream";
 
 function fakeStreamResponse(chunks: string[]): Response {
@@ -21,6 +22,8 @@ function fakeStreamResponse(chunks: string[]): Response {
 describe("useChatStream", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
+    setSessionMode("consulta");
+    setSessionAssistant({ type: "general" });
   });
 
   afterEach(() => {

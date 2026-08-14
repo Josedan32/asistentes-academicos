@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSessionAssistant, setSessionMode } from "@/lib/chat-session-state";
 import { ChatShell } from "./ChatShell";
 
 vi.mock("next/navigation", () => ({
@@ -23,6 +24,8 @@ function jsonResponse(body: unknown, status = 200) {
 
 describe("ChatShell", () => {
   beforeEach(() => {
+    setSessionMode("consulta");
+    setSessionAssistant({ type: "general" });
     localStorage.setItem("pb_token", "tok");
     localStorage.setItem("pb_role", "student");
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {

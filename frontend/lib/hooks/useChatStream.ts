@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { streamChat } from "@/lib/api/chat-stream";
+import { getSessionMode, setSessionMode } from "@/lib/chat-session-state";
 import type { ConversationDetailOut } from "@/lib/types";
 
 export type RunState = "idle" | "queued" | "loading_model" | "thinking" | "streaming" | "error";
@@ -49,7 +50,11 @@ export function useChatStream(courseId: number | null) {
   const [queuedInfo, setQueuedInfo] = useState<QueuedInfo | null>(null);
   const [thinkingTool, setThinkingTool] = useState<string | null>(null);
   const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
-  const [mode, setMode] = useState<ChatMode>("consulta");
+  const [mode, setModeState] = useState<ChatMode>(() => getSessionMode());
+  const setMode = useCallback((next: ChatMode) => {
+    setSessionMode(next);
+    setModeState(next);
+  }, []);
   const abortRef = useRef<AbortController | null>(null);
   const toolSequenceRef = useRef(0);
   const sendingRef = useRef(false);
@@ -68,7 +73,7 @@ export function useChatStream(courseId: number | null) {
     // the stale mode would still be sent with every message, and the backend's general tool
     // set doesn't support it — see finding 1 of the final review.
     setMode("consulta");
-  }, []);
+  }, [setMode]);
 
   const loadConversation = useCallback((detail: ConversationDetailOut) => {
     abortRef.current?.abort();

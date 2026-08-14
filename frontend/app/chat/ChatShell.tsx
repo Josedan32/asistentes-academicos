@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireRole } from "@/lib/hooks/useRequireRole";
 import { useChatStream } from "@/lib/hooks/useChatStream";
 import { getMe } from "@/lib/api/me";
 import { getConversation } from "@/lib/api/conversations";
+import { getSessionAssistant, setSessionAssistant } from "@/lib/chat-session-state";
 import type { ActiveAssistant } from "@/lib/assistant-identity";
 import { Sidebar } from "./Sidebar";
 import { ChatHeader } from "./ChatHeader";
@@ -24,7 +25,13 @@ export function ChatShell({
   useRequireRole("student");
   const router = useRouter();
   const meQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
-  const [activeAssistant, setActiveAssistant] = useState<ActiveAssistant>({ type: "general" });
+  const [activeAssistant, setActiveAssistantState] = useState<ActiveAssistant>(
+    () => getSessionAssistant()
+  );
+  const setActiveAssistant = useCallback((next: ActiveAssistant) => {
+    setSessionAssistant(next);
+    setActiveAssistantState(next);
+  }, []);
 
   const courseId = activeAssistant.type === "course" ? activeAssistant.courseId : null;
   const stream = useChatStream(courseId);
