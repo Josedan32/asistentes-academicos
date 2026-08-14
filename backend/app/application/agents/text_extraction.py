@@ -13,6 +13,10 @@ _ACCENTED = {
     "A": "Á", "E": "É", "I": "Í", "O": "Ó", "U": "Ú",
     "ı": "í", "İ": "Í",
 }
+# Math-typesetting fonts (e.g. extensible parenthesis/bracket pieces around a matrix) map
+# their glyphs into the Private Use Area, which pypdf extracts as codepoints with no real
+# character behind them — they render as tofu boxes with no readable fallback.
+_PRIVATE_USE_AREA = re.compile("[-]")
 
 
 class UnsupportedMaterialFormatError(Exception):
@@ -32,11 +36,16 @@ def extract_text(filename: str, content: bytes) -> str:
 def _extract_pdf(content: bytes) -> str:
     reader = PdfReader(io.BytesIO(content))
     text = "\n\n".join(page.extract_text() or "" for page in reader.pages)
-    return _fix_broken_accents(text)
+    text = _fix_broken_accents(text)
+    return _strip_private_use_area(text)
 
 
 def _fix_broken_accents(text: str) -> str:
     return _BROKEN_ACCENT.sub(lambda match: _ACCENTED[match.group(1)], text)
+
+
+def _strip_private_use_area(text: str) -> str:
+    return _PRIVATE_USE_AREA.sub("", text)
 
 
 def _extract_docx(content: bytes) -> str:

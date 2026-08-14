@@ -5,6 +5,7 @@ import pytest
 from app.application.agents.text_extraction import (
     UnsupportedMaterialFormatError,
     _fix_broken_accents,
+    _strip_private_use_area,
     extract_text,
 )
 
@@ -33,3 +34,8 @@ def test_recomposes_accents_split_by_pdf_extraction() -> None:
         "la noción de espacio vectorial"
     )
     assert _fix_broken_accents("cap´ıtulo 2") == "capítulo 2"
+
+
+def test_strips_private_use_area_glyphs_from_matrix_typesetting() -> None:
+    broken = "A = " + chr(0xf8ec) + "1 2" + chr(0xf8ed) + " matrix"
+    assert _strip_private_use_area(broken) == "A = 1 2 matrix"
