@@ -1,14 +1,36 @@
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import { normalizeLatexDelimiters } from "@/lib/normalize-latex-delimiters";
 
 /** Renders the assistant's response as structured Markdown instead of raw text — the model
- * naturally answers with **bold** terms and numbered/bulleted lists, and showing that markup
- * literally (asterisks, no line breaks) reads as broken. Every element maps to the bubble's
- * own typography (15.5px/1.65, text-body) so headings/lists don't clash with the design. */
+ * naturally answers with **bold** terms, numbered/bulleted lists, ## subtitles and math
+ * (per the system prompt), and showing that markup literally reads as broken. Every element
+ * maps to the bubble's own typography (15.5px/1.65, text-body) so headings/lists/formulas
+ * don't clash with the design. */
 export function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="flex flex-col gap-2 text-[15.5px] leading-[1.65] text-text-body">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
         components={{
+          h1: ({ children }) => (
+            <h2 className="m-0 mt-2 text-[18px] font-semibold text-navy first:mt-0">
+              {children}
+            </h2>
+          ),
+          h2: ({ children }) => (
+            <h2 className="m-0 mt-2 text-[17px] font-semibold text-navy first:mt-0">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="m-0 mt-1 text-[15.5px] font-semibold text-navy first:mt-0">
+              {children}
+            </h3>
+          ),
           p: ({ children }) => <p className="m-0">{children}</p>,
           strong: ({ children }) => <strong className="font-semibold text-navy">{children}</strong>,
           ul: ({ children }) => (
@@ -23,14 +45,32 @@ export function MarkdownContent({ content }: { content: string }) {
               {children}
             </a>
           ),
+          blockquote: ({ children }) => (
+            <div className="rounded-[8px] border-l-[3px] border-accent bg-tool-bg py-2 pl-3 pr-2">
+              {children}
+            </div>
+          ),
           code: ({ children }) => (
             <code className="rounded bg-[#F5F7F9] px-1 py-[1px] font-mono text-[13.5px]">
               {children}
             </code>
           ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto">
+              <table className="my-1 border-collapse text-[14px]">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => (
+            <th className="border border-border px-2 py-1 text-left font-semibold text-navy">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="border border-border px-2 py-1">{children}</td>
+          ),
         }}
       >
-        {content}
+        {normalizeLatexDelimiters(content)}
       </ReactMarkdown>
     </div>
   );
