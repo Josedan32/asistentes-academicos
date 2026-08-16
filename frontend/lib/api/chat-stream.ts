@@ -57,6 +57,11 @@ export async function streamChat(
     buffer += decoder.decode(value, { stream: true });
     const parsed = parseSSEChunk(buffer);
     buffer = parsed.remainder;
-    for (const event of parsed.events) onEvent(event);
+    for (const event of parsed.events) {
+      onEvent(event);
+      // Backend sends every token with no pacing; without this yield React batches
+      // them into one paint and the reply appears all at once instead of streaming.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   }
 }
