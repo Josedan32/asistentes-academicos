@@ -63,6 +63,29 @@ Tests, linting and type checking run from the **repository root** instead — se
 
 ---
 
+## Front-end
+
+```bash
+cd frontend
+```
+
+```bash
+npm install
+```
+
+```bash
+cp .env.local.example .env.local
+```
+
+```bash
+npm run dev
+```
+
+Runs at <http://localhost:3000>. Requires the backend running at the URL in `.env.local`
+(`NEXT_PUBLIC_API_BASE_URL`, `http://localhost:8000` by default).
+
+---
+
 ## Credenciales de prueba
 
 **Solo para desarrollo local.** Estas cuentas y contraseñas están sembradas en el `academic.db`
@@ -335,9 +358,3 @@ Every item here cost time at least once during development.
   period. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`.
 - Never commit `backend/.env`, `*.db`, `backend/.venv/`, `docs/superpowers/` or
   `.superpowers/`.
-
-
-Prueba:
-
-coordinacion@pascualbravo.edu.co
-tu-contraseña-de-prueba
