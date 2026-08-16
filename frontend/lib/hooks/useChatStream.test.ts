@@ -64,6 +64,33 @@ describe("useChatStream", () => {
     expect(assistantMessage?.toolCalls[0].name).toBe("get_prerequisites");
   });
 
+  it("keeps a stable clientId across the temp-id -> real-id transition on done", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      fakeStreamResponse([
+        'event: token\ndata: {"text":"Hola"}\n\n',
+        'event: done\ndata: {"tool_count":0,"total_ms":0,"source_count":0,' +
+          '"conversation_id":7,"message_id":55}\n\n',
+      ])
+    );
+    const { result } = renderHook(() => useChatStream(null));
+
+    act(() => {
+      void result.current.send("hola");
+    });
+    await waitFor(() => {
+      const assistant = result.current.messages.find((m) => m.role === "assistant");
+      expect(assistant?.clientId).toBeTruthy();
+    });
+    const clientIdBeforeDone = result.current.messages.find((m) => m.role === "assistant")
+      ?.clientId;
+
+    await waitFor(() => expect(result.current.runState).toBe("idle"));
+    const assistantAfterDone = result.current.messages.find((m) => m.role === "assistant");
+
+    expect(assistantAfterDone?.id).toBe(55);
+    expect(assistantAfterDone?.clientId).toBe(clientIdBeforeDone);
+  });
+
   it("surfaces an error event without throwing", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       fakeStreamResponse([

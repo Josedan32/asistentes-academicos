@@ -35,7 +35,7 @@ export function MessageThread({
       {messages.map((message) => {
         if (message.role === "user") {
           return (
-            <div key={message.id} className="flex justify-end">
+            <div key={message.clientId} className="flex justify-end">
               <div className="max-w-[78%] rounded-[14px_14px_4px_14px] bg-navy p-[13px_17px]
                                text-[15.5px] leading-[1.55] text-white">
                 {message.content}
@@ -47,7 +47,7 @@ export function MessageThread({
         const isActive = message.id === lastMessageId && BUSY_STATES.includes(runState);
         return (
           <AssistantMessage
-            key={message.id}
+            key={message.clientId}
             message={message}
             avatarState={isActive ? robotStateFor(runState) : "success"}
             isStreaming={isActive && runState === "streaming"}

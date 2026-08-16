@@ -26,6 +26,9 @@ export interface ChatFeedback {
 
 export interface ChatMessage {
   id: string | number;
+  /** Stable across the message's lifetime, unlike `id` (which starts as a temp
+   * string and becomes the real numeric id on `done`) — use this for React keys. */
+  clientId: string;
   role: "user" | "assistant";
   content: string;
   toolCalls: ChatToolCall[];
@@ -78,7 +81,8 @@ export function useChatStream(courseId: number | null) {
     setConversationId(detail.id);
     setMessages(
       mergeAssistantTurns(detail.messages).map((message) => ({
-        id: message.id, role: message.role, content: message.content,
+        id: message.id, clientId: String(message.id), role: message.role,
+        content: message.content,
         toolCalls: message.tool_calls.map((toolCall) => ({
           id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments,
           result: toolCall.result, duration_ms: toolCall.duration_ms,
@@ -109,8 +113,14 @@ export function useChatStream(courseId: number | null) {
       const assistantMessageId = `local-assistant-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
-        { id: userMessageId, role: "user", content: text, toolCalls: [], feedback: null },
-        { id: assistantMessageId, role: "assistant", content: "", toolCalls: [], feedback: null },
+        {
+          id: userMessageId, clientId: userMessageId, role: "user", content: text,
+          toolCalls: [], feedback: null,
+        },
+        {
+          id: assistantMessageId, clientId: assistantMessageId, role: "assistant", content: "",
+          toolCalls: [], feedback: null,
+        },
       ]);
       setRunState("thinking");
 
