@@ -5,10 +5,6 @@ import { useEffect, useRef, useState } from "react";
 const CHARS_PER_TICK = 3;
 const TICK_MS = 16;
 
-/** Reveals `target` a few characters at a time while `active`, snapping straight to the
- * full text once `active` goes false. Purely presentational: `useChatStream`'s message
- * content is already complete the instant each SSE token arrives — this only controls how
- * fast the UI shows it, so it never affects the hook's own tested behaviour. */
 export function useTypewriter(target: string, active: boolean): string {
   const [revealed, setRevealed] = useState(active ? "" : target);
   const targetRef = useRef(target);

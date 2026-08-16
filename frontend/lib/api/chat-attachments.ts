@@ -5,8 +5,6 @@ export interface ChatAttachmentOut {
   text: string;
 }
 
-/** Manual fetch instead of apiFetch: the latter forces a JSON Content-Type, which breaks
- * multipart/form-data uploads — same reasoning as uploadMaterial in materials-admin.ts. */
 export async function uploadChatAttachment(file: File): Promise<ChatAttachmentOut> {
   const token = getStoredToken();
   const formData = new FormData();

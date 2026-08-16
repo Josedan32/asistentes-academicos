@@ -1,8 +1,5 @@
 import type { MessageOut } from "./types";
 
-/** A single agent turn can span several DB rows (one per tool-calling iteration, empty
- * content, plus a final row with the reply). Collapse consecutive assistant rows into one
- * so a reloaded conversation shows the same single bubble the live stream already renders. */
 export function mergeAssistantTurns(messages: MessageOut[]): MessageOut[] {
   const merged: MessageOut[] = [];
   for (const message of messages) {

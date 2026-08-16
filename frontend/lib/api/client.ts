@@ -40,9 +40,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     try {
       const body = await response.json();
       if (typeof body?.detail === "string") detail = body.detail;
-    } catch {
-      // no JSON body on this error response
-    }
+    } catch {}
     throw new ApiError(response.status, detail);
   }
 

@@ -4,10 +4,6 @@ import { Settings2 } from "lucide-react";
 import { describeToolCall } from "@/lib/describe-tool-call";
 import type { ChatToolCall } from "@/lib/hooks/useChatStream";
 
-/** Never exposes `toolCall.arguments` / `toolCall.result` — those can carry raw student or
- * course data pulled straight from the database, and this card renders in a UI students can
- * screenshot and share. Only the pre-approved Spanish description from describeToolCall and
- * timing/row-count metadata are shown, with no way to expand into the raw payload. */
 export function ToolCallCard({ toolCall }: { toolCall: ChatToolCall }) {
   const description = describeToolCall(toolCall.name, toolCall.arguments);
   const hasNoRows = toolCall.row_count === 0;

@@ -69,10 +69,6 @@ export function useChatStream(courseId: number | null) {
     setQueuedInfo(null);
     setThinkingTool(null);
     setErrorInfo(null);
-    // A mode picked in a course-scoped conversation (e.g. "examen") must not survive into
-    // a subsequent General de Carrera conversation: the mode selector is hidden there, but
-    // the stale mode would still be sent with every message, and the backend's general tool
-    // set doesn't support it — see finding 1 of the final review.
     setMode("consulta");
   }, [setMode]);
 
@@ -105,13 +101,6 @@ export function useChatStream(courseId: number | null) {
 
   const send = useCallback(
     async (text: string) => {
-      // Guards against sending a second message while the first is still in flight — e.g. a
-      // student typing "Hola" while the previous turn is still loading the model. Without
-      // this, both requests reach the backend with the same (still-null) conversation_id and
-      // each creates its own conversation server-side, producing exactly the "some messages
-      // never get a visible reply" symptom this was written to fix. `runState` isn't a
-      // dependency here on purpose — the check must see the *current* value at call time, not
-      // the value from whenever this closure was created.
       if (sendingRef.current) return;
       sendingRef.current = true;
 

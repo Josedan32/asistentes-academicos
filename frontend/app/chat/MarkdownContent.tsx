@@ -6,11 +6,6 @@ import { normalizeLatexDelimiters } from "@/lib/normalize-latex-delimiters";
 
 const KATEX_OPTIONS = { throwOnError: false, errorColor: "#7D6A2E", strict: false as const };
 
-/** Renders the assistant's response as structured Markdown instead of raw text — the model
- * naturally answers with **bold** terms, numbered/bulleted lists, ## subtitles and math
- * (per the system prompt), and showing that markup literally reads as broken. Every element
- * maps to the bubble's own typography (15.5px/1.65, text-body) so headings/lists/formulas
- * don't clash with the design. */
 export function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="flex flex-col gap-2 text-[15.5px] leading-[1.65] text-text-body

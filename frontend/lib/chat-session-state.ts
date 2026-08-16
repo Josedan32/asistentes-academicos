@@ -1,7 +1,6 @@
 import type { ActiveAssistant } from "./assistant-identity";
 import type { ChatMode } from "./hooks/useChatStream";
 
-// Module-scope, not React state: survives a ChatShell remount regardless of cause.
 let activeAssistant: ActiveAssistant = { type: "general" };
 let mode: ChatMode = "consulta";
 

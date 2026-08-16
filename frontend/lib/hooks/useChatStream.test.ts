@@ -146,8 +146,6 @@ describe("useChatStream", () => {
     });
     await waitFor(() => expect(result.current.runState).toBe("thinking"));
 
-    // A second call while the first is still unresolved — e.g. the student typing again
-    // before the model responds — must not create a second user/assistant message pair.
     await act(async () => {
       await result.current.send("segunda, mientras la primera sigue en curso");
     });
@@ -215,10 +213,6 @@ describe("useChatStream", () => {
   });
 
   it("reset() clears a previously selected mode back to consulta", async () => {
-    // Regression test: switching from a course-scoped conversation (e.g. "examen" mode)
-    // to General de Carrera via ChatShell's handleSelectAssistant calls reset(). If mode
-    // stayed "examen", every later message in the general conversation would still send
-    // mode: "examen", which the backend's general tool set doesn't support.
     const { result } = renderHook(() => useChatStream(null));
 
     act(() => {
@@ -249,6 +243,6 @@ describe("useChatStream", () => {
 
     expect(result.current.runState).toBe("idle");
     expect(result.current.errorInfo).toBeNull();
-    expect(result.current.messages).toHaveLength(2); // the user turn + the empty assistant turn
+    expect(result.current.messages).toHaveLength(2);
   });
 });
