@@ -106,7 +106,9 @@ export function ChatShell({
         onSelectConversation={handleSelectConversation}
       />
       <div className="flex min-h-0 min-w-0 flex-col bg-app-bg">
-        <ChatHeader activeAssistant={activeAssistant} runState={stream.runState} />
+        <ChatHeader
+          activeAssistant={activeAssistant} runState={stream.runState} mode={stream.mode}
+        />
 
         <div ref={scrollRef} className="flex-1 overflow-auto py-7">
           <div className="mx-auto flex max-w-[800px] flex-col gap-[22px] px-6">
@@ -119,7 +121,6 @@ export function ChatShell({
               feedbackSlot={(message) => (
                 <FeedbackControls message={message} onFeedbackSubmitted={stream.applyFeedback} />
               )}
-              mode={stream.mode}
               onSubmitAnswer={(answer) => stream.send(answer)}
             />
           </div>

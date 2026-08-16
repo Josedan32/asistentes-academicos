@@ -10,7 +10,10 @@ function toolCall(overrides: Partial<ToolCallOut>): ToolCallOut {
 }
 
 function message(overrides: Partial<MessageOut>): MessageOut {
-  return { id: 1, role: "assistant", content: "", tool_calls: [], feedback: null, ...overrides };
+  return {
+    id: 1, role: "assistant", content: "", mode: null, tool_calls: [], feedback: null,
+    ...overrides,
+  };
 }
 
 describe("mergeAssistantTurns", () => {

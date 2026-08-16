@@ -31,10 +31,21 @@ export interface ChatMessage {
   clientId: string;
   role: "user" | "assistant";
   content: string;
+  /** The mode this message was actually sent under — independent of the mode
+   * selector's current value, so old messages render under their own mode. */
+  mode: ChatMode | null;
   toolCalls: ChatToolCall[];
   feedback: ChatFeedback | null;
   totalMs?: number;
   sourceCount?: number;
+}
+
+const KNOWN_MODES: readonly ChatMode[] = ["consulta", "estudio", "practica", "examen", "resumen"];
+
+function parseMode(value: string | null): ChatMode | null {
+  return value !== null && (KNOWN_MODES as readonly string[]).includes(value)
+    ? (value as ChatMode)
+    : null;
 }
 
 export interface QueuedInfo {
@@ -79,10 +90,11 @@ export function useChatStream(courseId: number | null) {
     abortRef.current?.abort();
     sendingRef.current = false;
     setConversationId(detail.id);
+    const merged = mergeAssistantTurns(detail.messages);
     setMessages(
-      mergeAssistantTurns(detail.messages).map((message) => ({
+      merged.map((message) => ({
         id: message.id, clientId: String(message.id), role: message.role,
-        content: message.content,
+        content: message.content, mode: parseMode(message.mode),
         toolCalls: message.tool_calls.map((toolCall) => ({
           id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments,
           result: toolCall.result, duration_ms: toolCall.duration_ms,
@@ -91,11 +103,13 @@ export function useChatStream(courseId: number | null) {
         feedback: message.feedback,
       }))
     );
+    const lastMode = parseMode(merged[merged.length - 1]?.mode ?? null);
+    setMode(lastMode ?? "consulta");
     setRunState("idle");
     setQueuedInfo(null);
     setThinkingTool(null);
     setErrorInfo(null);
-  }, []);
+  }, [setMode]);
 
   const applyFeedback = useCallback((messageId: string | number, feedback: ChatFeedback) => {
     setMessages((prev) =>
@@ -114,12 +128,12 @@ export function useChatStream(courseId: number | null) {
       setMessages((prev) => [
         ...prev,
         {
-          id: userMessageId, clientId: userMessageId, role: "user", content: text,
+          id: userMessageId, clientId: userMessageId, role: "user", content: text, mode,
           toolCalls: [], feedback: null,
         },
         {
           id: assistantMessageId, clientId: assistantMessageId, role: "assistant", content: "",
-          toolCalls: [], feedback: null,
+          mode, toolCalls: [], feedback: null,
         },
       ]);
       setRunState("thinking");

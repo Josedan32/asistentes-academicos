@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessage, ChatMode } from "@/lib/hooks/useChatStream";
+import type { ChatMessage } from "@/lib/hooks/useChatStream";
 import { useTypewriter } from "@/lib/hooks/useTypewriter";
 import type { RobotState } from "@/lib/robot-state";
 import { AssistantAvatar } from "./AssistantAvatar";
@@ -10,17 +10,16 @@ import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallCard } from "./ToolCallCard";
 
 export function AssistantMessage({
-  message, avatarState, isStreaming, feedbackSlot, mode, onSubmitAnswer,
+  message, avatarState, isStreaming, feedbackSlot, onSubmitAnswer,
 }: {
   message: ChatMessage;
   avatarState: RobotState;
   isStreaming: boolean;
   feedbackSlot?: (message: ChatMessage) => React.ReactNode;
-  mode: ChatMode;
   onSubmitAnswer?: (answer: string) => void;
 }) {
   const visibleContent = useTypewriter(message.content, isStreaming);
-  const isExerciseMode = mode === "practica" || mode === "examen";
+  const isExerciseMode = message.mode === "practica" || message.mode === "examen";
 
   return (
     <div className="flex items-start gap-3">

@@ -239,6 +239,111 @@ describe("useChatStream", () => {
     expect(JSON.parse(sentBody!).mode).toBe("estudio");
   });
 
+  it("send() stamps every new message with the currently selected mode", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      fakeStreamResponse([
+        'event: done\ndata: {"tool_count":0,"total_ms":0,"source_count":0,' +
+          '"conversation_id":1,"message_id":1}\n\n',
+      ])
+    );
+    const { result } = renderHook(() => useChatStream(5));
+
+    act(() => {
+      result.current.setMode("practica");
+    });
+    await act(async () => {
+      await result.current.send("dame un ejercicio");
+    });
+
+    expect(result.current.messages.every((m) => m.mode === "practica")).toBe(true);
+  });
+
+  it("loadConversation() restores each message's own mode, not the current selector", async () => {
+    const { result } = renderHook(() => useChatStream(5));
+
+    act(() => {
+      result.current.loadConversation({
+        id: 9,
+        title: "Algebra Lineal",
+        course_id: 5,
+        course_name: "Algebra Lineal",
+        messages: [
+          {
+            id: 1, role: "user", content: "hola", mode: "consulta", tool_calls: [], feedback: null,
+          },
+          {
+            id: 2, role: "assistant", content: "hola!", mode: "consulta", tool_calls: [],
+            feedback: null,
+          },
+          {
+            id: 3, role: "user", content: "dame un ejercicio", mode: "practica", tool_calls: [],
+            feedback: null,
+          },
+          {
+            id: 4, role: "assistant", content: "aqui tienes", mode: "practica", tool_calls: [],
+            feedback: null,
+          },
+        ],
+      });
+    });
+
+    expect(result.current.messages.map((m) => m.mode)).toEqual([
+      "consulta", "consulta", "practica", "practica",
+    ]);
+  });
+
+  it("loadConversation() sets the active mode selector to the last message's mode", async () => {
+    const { result } = renderHook(() => useChatStream(5));
+
+    act(() => {
+      result.current.setMode("estudio");
+    });
+
+    act(() => {
+      result.current.loadConversation({
+        id: 9,
+        title: "Algebra Lineal",
+        course_id: 5,
+        course_name: "Algebra Lineal",
+        messages: [
+          {
+            id: 1, role: "user", content: "hola", mode: "practica", tool_calls: [], feedback: null,
+          },
+          {
+            id: 2, role: "assistant", content: "un ejercicio", mode: "practica", tool_calls: [],
+            feedback: null,
+          },
+        ],
+      });
+    });
+
+    expect(result.current.mode).toBe("practica");
+  });
+
+  it("loadConversation() falls back to consulta when messages carry no recorded mode", async () => {
+    const { result } = renderHook(() => useChatStream(5));
+
+    act(() => {
+      result.current.setMode("examen");
+    });
+
+    act(() => {
+      result.current.loadConversation({
+        id: 9,
+        title: "Algebra Lineal",
+        course_id: 5,
+        course_name: "Algebra Lineal",
+        messages: [
+          {
+            id: 1, role: "user", content: "hola", mode: null, tool_calls: [], feedback: null,
+          },
+        ],
+      });
+    });
+
+    expect(result.current.mode).toBe("consulta");
+  });
+
   it("reset() clears a previously selected mode back to consulta", async () => {
     const { result } = renderHook(() => useChatStream(null));
 

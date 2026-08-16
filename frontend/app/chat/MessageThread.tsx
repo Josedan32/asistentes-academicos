@@ -1,7 +1,7 @@
 "use client";
 
 import type { ActiveAssistant } from "@/lib/assistant-identity";
-import type { ChatMessage, ChatMode, RunState } from "@/lib/hooks/useChatStream";
+import type { ChatMessage, RunState } from "@/lib/hooks/useChatStream";
 import { robotStateFor } from "@/lib/robot-state";
 import { AssistantMessage } from "./AssistantMessage";
 import { EmptyState } from "./EmptyState";
@@ -10,7 +10,7 @@ const BUSY_STATES: RunState[] = ["loading_model", "thinking", "queued", "streami
 
 export function MessageThread({
   messages, activeAssistant, runState = "idle", studentFirstName, onSuggestedQuestion,
-  feedbackSlot, mode, onSubmitAnswer,
+  feedbackSlot, onSubmitAnswer,
 }: {
   messages: ChatMessage[];
   activeAssistant: ActiveAssistant;
@@ -18,7 +18,6 @@ export function MessageThread({
   studentFirstName: string;
   onSuggestedQuestion: (text: string) => void;
   feedbackSlot?: (message: ChatMessage) => React.ReactNode;
-  mode: ChatMode;
   onSubmitAnswer?: (answer: string) => void;
 }) {
   if (messages.length === 0) {
@@ -52,7 +51,6 @@ export function MessageThread({
             avatarState={isActive ? robotStateFor(runState) : "success"}
             isStreaming={isActive && runState === "streaming"}
             feedbackSlot={feedbackSlot}
-            mode={mode}
             onSubmitAnswer={onSubmitAnswer}
           />
         );

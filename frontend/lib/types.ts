@@ -105,6 +105,7 @@ export interface MessageOut {
   id: number;
   role: "user" | "assistant";
   content: string;
+  mode: string | null;
   tool_calls: ToolCallOut[];
   feedback: FeedbackOut | null;
 }

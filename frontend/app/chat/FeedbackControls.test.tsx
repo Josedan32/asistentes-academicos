@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeedbackControls } from "./FeedbackControls";
 
 const message = {
-  id: 42, clientId: "42", role: "assistant" as const, content: "respuesta", toolCalls: [],
-  feedback: null,
+  id: 42, clientId: "42", role: "assistant" as const, content: "respuesta", mode: null,
+  toolCalls: [], feedback: null,
 };
 
 describe("FeedbackControls", () => {

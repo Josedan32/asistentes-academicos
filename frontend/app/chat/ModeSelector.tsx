@@ -4,7 +4,7 @@ import { Check, SlidersHorizontal } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import type { ChatMode } from "@/lib/hooks/useChatStream";
 
-const MODES: { value: ChatMode; label: string }[] = [
+export const MODES: { value: ChatMode; label: string }[] = [
   { value: "consulta", label: "Consulta" },
   { value: "estudio", label: "Estudio" },
   { value: "practica", label: "Práctica" },
