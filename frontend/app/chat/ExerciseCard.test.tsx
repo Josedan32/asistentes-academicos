@@ -54,4 +54,21 @@ describe("ExerciseCard", () => {
     expect(container.textContent).toContain("**no es negrita**");
     expect(container.textContent).toContain("$no es formula$");
   });
+
+  it("keeps a matrix's row-per-line layout from a real extracted chunk", () => {
+    // Real chunk from academic.db (material_chunks.id=239, "Ejercicio 16"):
+    // pypdf already separates each matrix row onto its own line — the bug was
+    // Markdown collapsing those newlines into spaces, not the extraction itself.
+    const matrixText =
+      "62 Matrices\nEjercicio 16. Averiguar si las siguientes matrices son inversibles y en caso " +
+      "afirmativo exhibir\nsus inversas.\ni) A =\n\n1 1 1\n0 1 1\n0 0 1";
+    const realFragment = { ...toolCall, result: { fragments: [{ text: matrixText, page: 62 }] } };
+
+    const { container } = render(<ExerciseCard toolCall={realFragment} onSubmitAnswer={() => {}} />);
+    const fragmentEl = screen.getByText(/Ejercicio 16/).closest("div");
+
+    expect(fragmentEl).toHaveClass("whitespace-pre-wrap");
+    expect(fragmentEl?.textContent).toBe(matrixText);
+    expect(container.querySelector(".katex")).not.toBeInTheDocument();
+  });
 });
