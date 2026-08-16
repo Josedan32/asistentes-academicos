@@ -230,3 +230,18 @@ body {
 button:hover {
   cursor: pointer;
 }
+
+.scrollbar-thin-navy {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-navy-button-border) transparent;
+}
+.scrollbar-thin-navy::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin-navy::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin-navy::-webkit-scrollbar-thumb {
+  background-color: var(--color-navy-button-border);
+  border-radius: 999px;
+}

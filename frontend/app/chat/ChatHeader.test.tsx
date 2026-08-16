@@ -1,14 +1,19 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatHeader } from "./ChatHeader";
 import type { ActiveAssistant } from "@/lib/assistant-identity";
 
-function renderHeader(activeAssistant: ActiveAssistant, mode?: "consulta" | "practica") {
+function renderHeader(
+  activeAssistant: ActiveAssistant,
+  mode?: "consulta" | "practica",
+  onOpenSidebar?: () => void
+) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <ChatHeader activeAssistant={activeAssistant} mode={mode} />
+      <ChatHeader activeAssistant={activeAssistant} mode={mode} onOpenSidebar={onOpenSidebar} />
     </QueryClientProvider>
   );
 }
@@ -31,5 +36,15 @@ describe("ChatHeader", () => {
   it("hides the mode label for the general assistant, matching the mode selector's own scope", () => {
     renderHeader({ type: "general" }, "consulta");
     expect(screen.queryByText("Modo actual del asistente:")).not.toBeInTheDocument();
+  });
+
+  it("the mobile menu button opens the sidebar", async () => {
+    const user = userEvent.setup();
+    const onOpenSidebar = vi.fn();
+    renderHeader({ type: "general" }, "consulta", onOpenSidebar);
+
+    await user.click(screen.getByLabelText("Abrir menú"));
+
+    expect(onOpenSidebar).toHaveBeenCalled();
   });
 });

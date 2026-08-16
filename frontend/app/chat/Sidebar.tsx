@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, X } from "lucide-react";
 import { getMe, listMyEnrollments } from "@/lib/api/me";
 import { listConversations } from "@/lib/api/conversations";
 import { relativeDate } from "@/lib/relative-date";
@@ -16,11 +16,13 @@ interface SidebarProps {
   onNewConversation: () => void;
   activeConversationId: number | null;
   onSelectConversation: (conversationId: number) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function Sidebar({
   activeAssistant, onSelectAssistant, onNewConversation, activeConversationId,
-  onSelectConversation,
+  onSelectConversation, isOpen, onClose,
 }: SidebarProps) {
   const router = useRouter();
   const { logout } = useAuth();
@@ -40,66 +42,99 @@ export function Sidebar({
     : "";
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden bg-navy">
-      <div className="flex flex-none flex-col gap-4 px-[18px] pb-4 pt-5">
-        <div className="w-fit rounded-md bg-white p-[9px_12px]">
-          <img src="/logo-wordmark.svg" alt="Pascual Bravo" className="block h-[26px]" />
-        </div>
-        <button
-          onClick={onNewConversation}
-          className="flex h-[42px] items-center justify-center gap-2 rounded-control
-                     border border-navy-button-border bg-navy-hover text-[14px] font-semibold
-                     text-white hover:bg-[#1A4374]"
-        >
-          + Nueva conversación
-        </button>
-      </div>
-
-      <div className="flex flex-none flex-col gap-[9px] px-[18px] pb-[14px]">
-        <button
-          onClick={() => setAssistantsExpanded((prev) => !prev)}
-          className="flex items-center justify-between text-[11px] font-semibold uppercase
-                     tracking-[.14em] text-accent-muted hover:text-accent-lighter"
-        >
-          Asistente
-          {assistantsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
-        <div className="flex flex-col gap-1">
+    <>
+      {isOpen && (
+        <div
+          onClick={onClose}
+          aria-hidden="true"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+        />
+      )}
+      <div
+        className={
+          "fixed inset-y-0 left-0 z-50 flex w-[288px] min-h-0 flex-col overflow-hidden " +
+          "bg-navy transition-transform duration-200 md:static md:z-auto md:translate-x-0 " +
+          (isOpen ? "translate-x-0" : "-translate-x-full")
+        }
+      >
+        <div className="flex flex-none items-center justify-between gap-4 px-[18px] pb-4 pt-5">
+          <div className="w-fit rounded-md bg-white p-[9px_12px]">
+            <img src="/logo-wordmark.svg" alt="Pascual Bravo" className="block h-[26px]" />
+          </div>
           <button
-            onClick={() => onSelectAssistant({ type: "general" })}
-            className={
-              activeAssistant.type === "general"
-                ? "flex items-center gap-[10px] rounded-[7px] bg-accent px-3 py-[10px] text-white"
-                : "flex items-center gap-[10px] rounded-[7px] px-3 py-[9px] text-accent-lighter " +
-                  "hover:bg-navy-hover"
-            }
+            onClick={onClose}
+            aria-label="Cerrar menú"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-[7px]
+                       text-accent-muted hover:bg-navy-hover hover:text-white md:hidden"
           >
-            <span className="h-[7px] w-[7px] rounded-full bg-assistant-dot" />
-            <span className="text-[14px] font-semibold">General de Carrera</span>
+            <X className="h-4 w-4" />
           </button>
+        </div>
+        <div className="flex flex-none flex-col px-[18px] pb-4">
+          <button
+            onClick={() => {
+              onNewConversation();
+              onClose();
+            }}
+            className="flex h-[42px] items-center justify-center gap-2 rounded-control
+                       border border-navy-button-border bg-navy-hover text-[14px] font-semibold
+                       text-white hover:bg-[#1A4374]"
+          >
+            + Nueva conversación
+          </button>
+        </div>
 
-          {assistantsExpanded && (
-            <>
-              {(enrollmentsQuery.data?.length ?? 0) > 0 && (
-                <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.1em]
-                                 text-accent-muted">
-                  Materias matriculadas
-                </div>
-              )}
+        <div
+          className="scrollbar-thin-navy flex min-h-0 flex-1 flex-col gap-[9px] overflow-y-auto
+                     px-[18px] pb-[14px]"
+        >
+          <button
+            onClick={() => setAssistantsExpanded((prev) => !prev)}
+            className="flex items-center justify-between text-[11px] font-semibold uppercase
+                       tracking-[.14em] text-accent-muted hover:text-accent-lighter"
+          >
+            Asistente
+            {assistantsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => {
+                onSelectAssistant({ type: "general" });
+                onClose();
+              }}
+              className={
+                activeAssistant.type === "general"
+                  ? "flex items-center gap-[10px] rounded-[7px] bg-accent px-3 py-[10px] text-white"
+                  : "flex items-center gap-[10px] rounded-[7px] px-3 py-[9px] text-accent-lighter " +
+                    "hover:bg-navy-hover"
+              }
+            >
+              <span className="h-[7px] w-[7px] rounded-full bg-assistant-dot" />
+              <span className="text-[14px] font-semibold">General de Carrera</span>
+            </button>
 
-              <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
+            {assistantsExpanded && (
+              <>
+                {(enrollmentsQuery.data?.length ?? 0) > 0 && (
+                  <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.1em]
+                                   text-accent-muted">
+                    Materias matriculadas
+                  </div>
+                )}
+
                 {(enrollmentsQuery.data ?? []).map((enrollment) => {
                   const isActive = activeAssistant.type === "course" &&
                     activeAssistant.courseId === enrollment.course_id;
                   return (
                     <button
                       key={enrollment.course_id}
-                      onClick={() =>
+                      onClick={() => {
                         onSelectAssistant({
                           type: "course", courseId: enrollment.course_id,
                           courseName: enrollment.course_name,
-                        })
-                      }
+                        });
+                        onClose();
+                      }}
                       className={
                         isActive
                           ? "flex items-center gap-[10px] rounded-[7px] bg-accent px-3 py-[9px] " +
@@ -113,72 +148,73 @@ export function Sidebar({
                     </button>
                   );
                 })}
-              </div>
-            </>
+              </>
+            )}
+          </div>
+          {assistantsExpanded && (
+            <div className="px-3 pt-[6px] text-[12px] leading-[1.45] text-accent-muted">
+              Cambiar de asistente abre una conversación nueva. No se comparte contexto entre
+              materias.
+            </div>
           )}
-        </div>
-        {assistantsExpanded && (
-          <div className="px-3 pt-[6px] text-[12px] leading-[1.45] text-accent-muted">
-            Cambiar de asistente abre una conversación nueva. No se comparte contexto entre
-            materias.
+
+          <div className="mx-[-18px] my-[5px] h-px flex-none bg-navy-divider" />
+
+          <div className="pb-2 text-[11px] font-semibold uppercase tracking-[.14em] text-accent-muted">
+            Recientes
           </div>
-        )}
-      </div>
-
-      <div className="mx-[18px] mb-[14px] mt-[6px] h-px bg-navy-divider" />
-
-      <div className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-auto px-[18px]">
-        <div className="pb-2 text-[11px] font-semibold uppercase tracking-[.14em] text-accent-muted">
-          Recientes
+          {(conversationsQuery.data ?? []).map((conversation) => (
+            <button
+              key={conversation.id}
+              onClick={() => {
+                onSelectConversation(conversation.id);
+                onClose();
+              }}
+              className={
+                conversation.id === activeConversationId
+                  ? "rounded-[7px] bg-navy-hover px-3 py-[9px] text-left"
+                  : "rounded-[7px] px-3 py-[9px] text-left hover:bg-navy-hover"
+              }
+            >
+              <div className="truncate text-[14px] font-medium text-white">
+                {conversation.title}
+              </div>
+              <div className="pt-[3px] text-[12px] text-accent-muted">
+                {conversation.course_name ?? "General"} · {relativeDate(conversation.created_at)}
+              </div>
+            </button>
+          ))}
         </div>
-        {(conversationsQuery.data ?? []).map((conversation) => (
+
+        <div className="flex flex-none items-center gap-[11px] border-t border-navy-divider
+                         px-[18px] py-[14px]">
+          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full
+                           bg-accent text-[13px] font-semibold text-white">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-semibold text-white">
+              {meQuery.data ? `${meQuery.data.first_name} ${meQuery.data.last_name}` : ""}
+            </div>
+            <div className="text-[12px] text-accent-muted">
+              {meQuery.data?.program_code ? `${meQuery.data.program_code} · sem ` +
+                `${meQuery.data.current_semester}` : ""}
+            </div>
+          </div>
           <button
-            key={conversation.id}
-            onClick={() => onSelectConversation(conversation.id)}
-            className={
-              conversation.id === activeConversationId
-                ? "rounded-[7px] bg-navy-hover px-3 py-[9px] text-left"
-                : "rounded-[7px] px-3 py-[9px] text-left hover:bg-navy-hover"
-            }
+            onClick={() => {
+              logout();
+              router.push("/login");
+            }}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-[7px]
+                       text-accent-muted hover:bg-navy-hover hover:text-white"
           >
-            <div className="truncate text-[14px] font-medium text-white">
-              {conversation.title}
-            </div>
-            <div className="pt-[3px] text-[12px] text-accent-muted">
-              {conversation.course_name ?? "General"} · {relativeDate(conversation.created_at)}
-            </div>
+            <LogOut className="h-4 w-4" />
           </button>
-        ))}
-      </div>
-
-      <div className="flex flex-none items-center gap-[11px] border-t border-navy-divider
-                       px-[18px] py-[14px]">
-        <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full
-                         bg-accent text-[13px] font-semibold text-white">
-          {initials}
         </div>
-        <div className="min-w-0">
-          <div className="truncate text-[13px] font-semibold text-white">
-            {meQuery.data ? `${meQuery.data.first_name} ${meQuery.data.last_name}` : ""}
-          </div>
-          <div className="text-[12px] text-accent-muted">
-            {meQuery.data?.program_code ? `${meQuery.data.program_code} · sem ` +
-              `${meQuery.data.current_semester}` : ""}
-          </div>
-        </div>
-        <button
-          onClick={() => {
-            logout();
-            router.push("/login");
-          }}
-          title="Cerrar sesión"
-          aria-label="Cerrar sesión"
-          className="flex h-8 w-8 flex-none items-center justify-center rounded-[7px]
-                     text-accent-muted hover:bg-navy-hover hover:text-white"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
       </div>
-    </div>
+    </>
   );
 }

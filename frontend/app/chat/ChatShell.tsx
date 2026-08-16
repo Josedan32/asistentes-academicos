@@ -35,6 +35,7 @@ export function ChatShell({
 
   const courseId = activeAssistant.type === "course" ? activeAssistant.courseId : null;
   const stream = useChatStream(courseId);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -97,17 +98,20 @@ export function ChatShell({
   }
 
   return (
-    <div className="grid h-screen grid-cols-[288px_1fr] grid-rows-[100%] overflow-hidden">
+    <div className="h-screen overflow-hidden md:grid md:grid-cols-[288px_1fr] md:grid-rows-[100%]">
       <Sidebar
         activeAssistant={activeAssistant}
         onSelectAssistant={handleSelectAssistant}
         onNewConversation={handleNewConversation}
         activeConversationId={stream.conversationId}
         onSelectConversation={handleSelectConversation}
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
       />
-      <div className="flex min-h-0 min-w-0 flex-col bg-app-bg">
+      <div className="flex h-full min-h-0 min-w-0 flex-col bg-app-bg">
         <ChatHeader
           activeAssistant={activeAssistant} runState={stream.runState} mode={stream.mode}
+          onOpenSidebar={() => setMobileSidebarOpen(true)}
         />
 
         <div ref={scrollRef} className="flex-1 overflow-auto py-7">
