@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ExerciseCard } from "./ExerciseCard";
 
 const toolCall = {
@@ -10,65 +9,23 @@ const toolCall = {
 };
 
 describe("ExerciseCard", () => {
-  it("shows the retrieved exercise text and an answer input", () => {
-    render(<ExerciseCard toolCall={toolCall} onSubmitAnswer={() => {}} />);
-    expect(screen.getByText(/normaliza esta tabla/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/tu respuesta/i)).toBeInTheDocument();
+  it("shows the source citation with the page number, not the raw fragment text", () => {
+    render(<ExerciseCard toolCall={toolCall} />);
+    expect(screen.getByText("Ejercicio del material del curso")).toBeInTheDocument();
+    expect(screen.getByText("pág. 4")).toBeInTheDocument();
+    expect(screen.queryByText(/normaliza esta tabla/)).not.toBeInTheDocument();
   });
 
-  it("submits the typed answer and clears the input", async () => {
-    const onSubmitAnswer = vi.fn();
-    const user = userEvent.setup();
-    render(<ExerciseCard toolCall={toolCall} onSubmitAnswer={onSubmitAnswer} />);
-
-    await user.type(screen.getByPlaceholderText(/tu respuesta/i), "mi respuesta");
-    await user.click(screen.getByRole("button", { name: /enviar respuesta/i }));
-
-    expect(onSubmitAnswer).toHaveBeenCalledWith("mi respuesta");
-    expect(screen.getByPlaceholderText(/tu respuesta/i)).toHaveValue("");
+  it("omits the page badge when the fragment has no page", () => {
+    const noPage = { ...toolCall, result: { fragments: [{ text: "x", page: null }] } };
+    render(<ExerciseCard toolCall={noPage} />);
+    expect(screen.queryByText(/pág\./)).not.toBeInTheDocument();
   });
 
   it("renders nothing when no fragments were found", () => {
     const { container } = render(
-      <ExerciseCard
-        toolCall={{ ...toolCall, result: { fragments: [] }, row_count: 0 }}
-        onSubmitAnswer={() => {}}
-      />
+      <ExerciseCard toolCall={{ ...toolCall, result: { fragments: [] }, row_count: 0 }} />
     );
     expect(container).toBeEmptyDOMElement();
-  });
-
-  it("shows a raw material fragment as plain text, not parsed as markdown/LaTeX", () => {
-    const rawFragment = {
-      ...toolCall,
-      result: {
-        fragments: [
-          { text: "1 1 0\n0 1 0\n0 0 1\n**no es negrita** y $no es formula$", page: 62 },
-        ],
-      },
-    };
-    const { container } = render(<ExerciseCard toolCall={rawFragment} onSubmitAnswer={() => {}} />);
-
-    expect(container.querySelector(".katex")).not.toBeInTheDocument();
-    expect(container.querySelector("strong")).not.toBeInTheDocument();
-    expect(container.textContent).toContain("**no es negrita**");
-    expect(container.textContent).toContain("$no es formula$");
-  });
-
-  it("keeps a matrix's row-per-line layout from a real extracted chunk", () => {
-    // Real chunk from academic.db (material_chunks.id=239, "Ejercicio 16"):
-    // pypdf already separates each matrix row onto its own line — the bug was
-    // Markdown collapsing those newlines into spaces, not the extraction itself.
-    const matrixText =
-      "62 Matrices\nEjercicio 16. Averiguar si las siguientes matrices son inversibles y en caso " +
-      "afirmativo exhibir\nsus inversas.\ni) A =\n\n1 1 1\n0 1 1\n0 0 1";
-    const realFragment = { ...toolCall, result: { fragments: [{ text: matrixText, page: 62 }] } };
-
-    const { container } = render(<ExerciseCard toolCall={realFragment} onSubmitAnswer={() => {}} />);
-    const fragmentEl = screen.getByText(/Ejercicio 16/).closest("div");
-
-    expect(fragmentEl).toHaveClass("whitespace-pre-wrap");
-    expect(fragmentEl?.textContent).toBe(matrixText);
-    expect(container.querySelector(".katex")).not.toBeInTheDocument();
   });
 });

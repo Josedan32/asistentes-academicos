@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessage, ChatMode, ChatToolCall } from "@/lib/hooks/useChatStream";
+import type { ChatMessage, ChatMode } from "@/lib/hooks/useChatStream";
 import { useTypewriter } from "@/lib/hooks/useTypewriter";
 import type { RobotState } from "@/lib/robot-state";
 import { AssistantAvatar } from "./AssistantAvatar";
@@ -8,11 +8,6 @@ import { ExerciseAnswerPanel } from "./ExerciseAnswerPanel";
 import { ExerciseCard } from "./ExerciseCard";
 import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallCard } from "./ToolCallCard";
-
-function hasFragments(toolCall: ChatToolCall): boolean {
-  const fragments = (toolCall.result as { fragments?: unknown[] } | undefined)?.fragments;
-  return Array.isArray(fragments) && fragments.length > 0;
-}
 
 export function AssistantMessage({
   message, avatarState, isStreaming, feedbackSlot, mode, onSubmitAnswer,
@@ -26,8 +21,6 @@ export function AssistantMessage({
 }) {
   const visibleContent = useTypewriter(message.content, isStreaming);
   const isExerciseMode = mode === "practica" || mode === "examen";
-  const searchCall = message.toolCalls.find((tc) => tc.name === "search_course_material");
-  const foundInMaterial = isExerciseMode && !!searchCall && hasFragments(searchCall);
 
   return (
     <div className="flex items-start gap-3">
@@ -35,12 +28,7 @@ export function AssistantMessage({
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {message.toolCalls.map((toolCall) =>
           toolCall.name === "search_course_material" && isExerciseMode
-            ? (
-              <ExerciseCard
-                key={toolCall.id} toolCall={toolCall}
-                onSubmitAnswer={(answer) => onSubmitAnswer?.(answer)}
-              />
-            )
+            ? <ExerciseCard key={toolCall.id} toolCall={toolCall} />
             : <ToolCallCard key={toolCall.id} toolCall={toolCall} />
         )}
 
@@ -51,7 +39,7 @@ export function AssistantMessage({
           </div>
         )}
 
-        {isExerciseMode && !isStreaming && !foundInMaterial && message.content && onSubmitAnswer && (
+        {isExerciseMode && !isStreaming && message.content && onSubmitAnswer && (
           <ExerciseAnswerPanel onSubmitAnswer={onSubmitAnswer} />
         )}
 
