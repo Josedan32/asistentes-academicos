@@ -1,0 +1,2 @@
+# comentarios
+No hagas comentario por todo en el codiog o por fi, prefiero codigo que se entienda todo a comentarios, y si ves necesarios comentarios, que sean muy especificos y al punto menos de dos lineas
