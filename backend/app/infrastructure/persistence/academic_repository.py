@@ -15,7 +15,6 @@ from app.infrastructure.persistence.models import (
 
 
 def normalize_name(value: str) -> str:
-    """Lowercase and strip accents so 'Ingeniería' and 'ingenieria' match."""
     decomposed = unicodedata.normalize("NFKD", value.strip().lower())
     return "".join(char for char in decomposed if not unicodedata.combining(char))
 

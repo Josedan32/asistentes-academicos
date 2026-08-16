@@ -22,8 +22,6 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
 
-    # Absolute path: `env_file=".env"` resolves against the current working directory,
-    # so settings would load from backend/ but not from the repository root.
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         extra="ignore",

@@ -1,12 +1,3 @@
-"""Risk probe: measure tool-selection reliability of the local model.
-
-Run with `backend/.venv/Scripts/python.exe backend/scripts/spike_tool_calling.py`.
-Requires a running Ollama with qwen2.5:3b pulled.
-
-`extract_tool_call` is pure and covered by tests/scripts/test_spike_tool_calling.py;
-the network path is not tested, since that would be testing Ollama.
-"""
-
 import asyncio
 import json
 
@@ -68,11 +59,6 @@ CASES: list[tuple[str, str]] = [
 
 
 def extract_tool_call(payload: dict) -> tuple[str | None, dict | None]:
-    """Pull the first tool call out of an Ollama /api/chat response.
-
-    Ollama returns `arguments` as an object; the OpenAI wire format returns a JSON
-    string. Callers must not json.loads the result. Plan 2's adapter depends on this.
-    """
     tool_calls = payload.get("message", {}).get("tool_calls") or []
     if not tool_calls:
         return None, None

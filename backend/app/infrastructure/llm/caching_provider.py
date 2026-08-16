@@ -4,9 +4,6 @@ from app.application.agents.ports import LLMProvider, ResponseCache
 
 
 class CachingLLMProvider:
-    """Wraps any LLMProvider with a response cache, transparently — the loop and the
-    other adapters never need to know it is there (spec §8.2)."""
-
     def __init__(self, *, inner: LLMProvider, cache: ResponseCache, ttl_seconds: int) -> None:
         self._inner = inner
         self._cache = cache

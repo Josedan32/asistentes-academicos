@@ -1,8 +1,3 @@
-"""course_id is deliberately absent from SearchCourseMaterialArgs, injected instead from
-ToolContext.active_course_id — the same identity-injection principle as every other tool's
-program_id. `course` is model-supplied only to let a student explicitly name a *different*
-(typically prerequisite) course to search, per spec §2."""
-
 from typing import Any
 
 from pydantic import BaseModel, Field

@@ -1,9 +1,3 @@
-"""The domain layer must not depend on any framework.
-
-Dependencies point inward: domain imports nothing external, application imports
-domain, infrastructure and api import inward. This test enforces the innermost rule.
-"""
-
 import ast
 from pathlib import Path
 
@@ -54,7 +48,6 @@ def test_domain_module_imports_no_framework(path: Path) -> None:
 
 
 def _internal_imports(path: Path) -> set[str]:
-    """Return the app.* modules this file imports, as dotted paths."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
     modules: set[str] = set()
     for node in ast.walk(tree):

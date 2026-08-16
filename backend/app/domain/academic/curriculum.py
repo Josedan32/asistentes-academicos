@@ -13,8 +13,6 @@ from app.domain.academic.exceptions import (
 
 @dataclass
 class Curriculum:
-    """A program's course map. Owns every rule that spans more than one entry."""
-
     program: Program
     entries: list[CurriculumEntry] = field(default_factory=list)
 
@@ -25,7 +23,6 @@ class Curriculum:
         return None
 
     def entry_for(self, course_id: int) -> CurriculumEntry:
-        """Return the entry for a course, raising if the course is not in this curriculum."""
         return self.entries[self._index_of(course_id)]
 
     def assign(

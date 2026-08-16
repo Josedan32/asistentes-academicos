@@ -93,10 +93,6 @@ class StudentProfileModel(Base):
 
 
 class AcademicHistoryRecordModel(Base):
-    """One past academic period's outcome for one course: grade, pass/fail/cancelled
-    status, and how many times the student has taken it. Read-only from the agent's
-    perspective — populated by coordination/import, never written through the API."""
-
     __tablename__ = "academic_history_records"
     __table_args__ = (
         UniqueConstraint(
@@ -117,10 +113,6 @@ class AcademicHistoryRecordModel(Base):
 
 
 class StudentEnrollmentModel(Base):
-    """A course the student is actually registered in for a given period — independent
-    of the curriculum's "semester N" grouping, since real students drift from that
-    (repeats, cancellations, testing out of levels ahead of schedule, etc.)."""
-
     __tablename__ = "student_enrollments"
     __table_args__ = (
         UniqueConstraint(
@@ -142,8 +134,6 @@ class ConversationModel(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    # SET NULL, not RESTRICT like courses' other FKs: a course being retired must not
-    # block deleting it just because an old conversation once referenced it.
     course_id: Mapped[int | None] = mapped_column(
         ForeignKey("courses.id", ondelete="SET NULL"), nullable=True
     )
@@ -195,9 +185,7 @@ class CourseMaterialModel(Base):
     __tablename__ = "course_materials"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    course_id: Mapped[int] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE"), index=True
-    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     filename: Mapped[str] = mapped_column(String(255))
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
@@ -209,11 +197,7 @@ class MaterialChunkModel(Base):
     material_id: Mapped[int] = mapped_column(
         ForeignKey("course_materials.id", ondelete="CASCADE"), index=True
     )
-    # Denormalized from course_materials.course_id: search filters by course_id on every
-    # chat message, and this avoids a join on that hot path.
-    course_id: Mapped[int] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE"), index=True
-    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     sequence: Mapped[int] = mapped_column(Integer)
     page: Mapped[int | None] = mapped_column(Integer, nullable=True)
     text: Mapped[str] = mapped_column(Text)

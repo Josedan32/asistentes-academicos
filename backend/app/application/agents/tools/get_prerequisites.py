@@ -1,9 +1,3 @@
-"""program_id is deliberately absent from GetPrerequisitesArgs: the same identity-injection
-principle as get_course_detail (spec §7.5, ADR 0008). It is injected server-side from the
-authenticated student's profile rather than asked of the model, because the 3B model does
-not reliably pull it out of the system prompt on its own — observed in production as the
-model asking the student to supply their own program id instead of answering."""
-
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import PrerequisiteResult

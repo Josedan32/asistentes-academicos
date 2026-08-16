@@ -10,8 +10,9 @@ from app.infrastructure.llm.groq_provider import GroqProvider
 
 
 def _provider(handler: Callable[[httpx.Request], httpx.Response]) -> GroqProvider:
-    return GroqProvider(api_key="test-key", model="llama-3.3-70b-versatile",
-                         transport=httpx.MockTransport(handler))
+    return GroqProvider(
+        api_key="test-key", model="llama-3.3-70b-versatile", transport=httpx.MockTransport(handler)
+    )
 
 
 async def test_sends_the_bearer_token() -> None:
@@ -26,22 +27,30 @@ async def test_sends_the_bearer_token() -> None:
 
 
 async def test_json_loads_the_tool_call_arguments_string() -> None:
-    """Groq follows the OpenAI wire format: `arguments` is a JSON-encoded string — the
-    opposite of Ollama's native object (ADR 0006). Not calling json.loads here would
-    leave arguments as an unparsed string and every Pydantic validation would fail."""
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={
-            "choices": [{"message": {
-                "content": None,
-                "tool_calls": [{
-                    "id": "call_1",
-                    "function": {"name": "get_prerequisites",
-                                 "arguments": json.dumps({"program_id": 1, "course": "BD2"})},
-                }],
-            }}],
-            "usage": {"prompt_tokens": 50, "completion_tokens": 10},
-            "model": "llama-3.3-70b-versatile",
-        })
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": "call_1",
+                                    "function": {
+                                        "name": "get_prerequisites",
+                                        "arguments": json.dumps({"program_id": 1, "course": "BD2"}),
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ],
+                "usage": {"prompt_tokens": 50, "completion_tokens": 10},
+                "model": "llama-3.3-70b-versatile",
+            },
+        )
 
     response = await _provider(handler).complete(
         [LLMMessage(role="user", content="hola")],

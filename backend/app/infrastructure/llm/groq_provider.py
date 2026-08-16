@@ -36,8 +36,6 @@ def _to_openai_tools(tools: list[ToolDefinition]) -> list[dict[str, Any]]:
 
 
 class GroqProvider:
-    """Talks to Groq's OpenAI-compatible `/openai/v1/chat/completions` endpoint."""
-
     def __init__(
         self, *, api_key: str, model: str, transport: httpx.AsyncBaseTransport | None = None
     ) -> None:
@@ -50,7 +48,7 @@ class GroqProvider:
         return self._model
 
     async def is_loaded(self) -> bool:
-        return True  # hosted: no local load state to query
+        return True
 
     async def complete(
         self, messages: list[LLMMessage], tools: list[ToolDefinition] | None = None
@@ -66,19 +64,20 @@ class GroqProvider:
         start = time.monotonic()
         async with httpx.AsyncClient(transport=self._transport) as client:
             response = await client.post(
-                GROQ_URL, json=payload,
-                headers={"Authorization": f"Bearer {self._api_key}"}, timeout=60.0,
+                GROQ_URL,
+                json=payload,
+                headers={"Authorization": f"Bearer {self._api_key}"},
+                timeout=60.0,
             )
         response.raise_for_status()
         latency_ms = int((time.monotonic() - start) * 1000)
 
         body = response.json()
         choice = body["choices"][0]["message"]
-        # OpenAI wire format: `arguments` is a JSON-encoded string, the opposite of
-        # Ollama's native object. This is the one line that differs between the adapters.
         tool_calls = [
             ToolCallRequest(
-                id=call["id"], name=call["function"]["name"],
+                id=call["id"],
+                name=call["function"]["name"],
                 arguments=json.loads(call["function"]["arguments"]),
             )
             for call in choice.get("tool_calls") or []

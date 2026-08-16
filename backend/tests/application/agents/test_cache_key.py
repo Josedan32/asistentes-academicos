@@ -10,19 +10,21 @@ def test_same_inputs_produce_the_same_key() -> None:
 
 
 def test_a_changed_tool_schema_changes_the_key_even_with_the_same_tool_name() -> None:
-    """Regression: the key used to hash only tool names, so shipping a fixed tool schema
-    (e.g. removing a model-supplied argument) silently kept serving cached completions
-    generated under the old, broken schema — observed in production as the program_id
-    fix (see list_semester_courses.py) appearing not to take effect."""
     messages = [LLMMessage(role="user", content="hola")]
-    old_schema = [ToolDefinition(
-        name="list_semester_courses", description="d",
-        parameters={"properties": {"program_id": {}, "semester": {}}},
-    )]
-    new_schema = [ToolDefinition(
-        name="list_semester_courses", description="d",
-        parameters={"properties": {"semester": {}}},
-    )]
+    old_schema = [
+        ToolDefinition(
+            name="list_semester_courses",
+            description="d",
+            parameters={"properties": {"program_id": {}, "semester": {}}},
+        )
+    ]
+    new_schema = [
+        ToolDefinition(
+            name="list_semester_courses",
+            description="d",
+            parameters={"properties": {"semester": {}}},
+        )
+    ]
 
     assert cache_key(messages, "m", old_schema) != cache_key(messages, "m", new_schema)
 

@@ -1,14 +1,3 @@
-"""program_id is deliberately absent from GetCourseDetailArgs: the spec's tool signature
-is get_course_detail(course) (spec §7.4), and Plan 1's fix wave found that leaving
-program_id optional lets credits silently degrade to None (residual R2). It is injected
-server-side from the authenticated student's profile instead, the same principle §7.5
-applies to identity.
-
-`course` itself is optional for the same reason: qwen2.5:3b sometimes asks the student
-to name the course even when one is already active (observed in production on "de que
-trata esta materia") instead of reading it out of its own context. Omitting the argument
-falls back to context.active_course_id, resolved with no name-matching at all."""
-
 from pydantic import BaseModel, Field
 
 from app.application.academic.dto import CourseDetail

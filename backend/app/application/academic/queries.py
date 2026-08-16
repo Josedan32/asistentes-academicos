@@ -1,5 +1,3 @@
-"""Query handlers. Each of the four agent tools in Plan 2 is backed by one of these."""
-
 from dataclasses import dataclass
 
 from app.application.academic.dto import (
@@ -61,9 +59,7 @@ class GetPrerequisites:
 class GetCourseDetail:
     reader: AcademicReader
 
-    async def execute(
-        self, *, course: str, program_id: int | None = None
-    ) -> CourseDetail | None:
+    async def execute(self, *, course: str, program_id: int | None = None) -> CourseDetail | None:
         resolution = resolve_course(course, await self.reader.course_candidates())
         if not isinstance(resolution, Resolved):
             return None

@@ -10,7 +10,10 @@ from app.infrastructure.llm.ollama_provider import OllamaProvider
 
 def _provider(handler: Callable[[httpx.Request], httpx.Response]) -> OllamaProvider:
     return OllamaProvider(
-        base_url="http://localhost:11434", model="qwen2.5:3b", num_ctx=8192, keep_alive="10m",
+        base_url="http://localhost:11434",
+        model="qwen2.5:3b",
+        num_ctx=8192,
+        keep_alive="10m",
         transport=httpx.MockTransport(handler),
     )
 
@@ -27,17 +30,25 @@ async def test_sends_num_ctx_and_keep_alive() -> None:
 
 
 async def test_normalizes_a_tool_call_without_json_loads_ing_the_arguments() -> None:
-    """Ollama already returns `arguments` as a dict. json.loads-ing it would raise
-    TypeError — this is the exact wire-format asymmetry ADR 0006 pins."""
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={
-            "message": {"content": "", "tool_calls": [
-                {"function": {"name": "list_semester_courses",
-                               "arguments": {"program_id": 1, "semester": 4}}}
-            ]},
-            "prompt_eval_count": 120,
-            "eval_count": 15,
-        })
+        return httpx.Response(
+            200,
+            json={
+                "message": {
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "list_semester_courses",
+                                "arguments": {"program_id": 1, "semester": 4},
+                            }
+                        }
+                    ],
+                },
+                "prompt_eval_count": 120,
+                "eval_count": 15,
+            },
+        )
 
     response = await _provider(handler).complete(
         [LLMMessage(role="user", content="hola")],

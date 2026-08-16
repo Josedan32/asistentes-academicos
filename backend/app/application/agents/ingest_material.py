@@ -13,7 +13,7 @@ class IngestCourseMaterial:
     embedder: EmbeddingProvider
 
     async def execute(self, *, course_id: int, filename: str, content: bytes) -> CourseMaterial:
-        text = extract_text(filename, content)  # raises before any write, per the test above
+        text = extract_text(filename, content)
         chunks = chunk_text(text)
 
         existing = await self.repository.find_by_filename(course_id, filename)
@@ -29,15 +29,21 @@ class IngestCourseMaterial:
         if chunks:
             try:
                 embeddings = await self.embedder.embed(chunks)
-                await self.repository.add_chunks([
-                    MaterialChunk(
-                        material_id=material.id, course_id=course_id, sequence=index + 1,
-                        page=None, text=chunk, embedding=embedding,
-                    )
-                    for index, (chunk, embedding) in enumerate(
-                        zip(chunks, embeddings, strict=True)
-                    )
-                ])
+                await self.repository.add_chunks(
+                    [
+                        MaterialChunk(
+                            material_id=material.id,
+                            course_id=course_id,
+                            sequence=index + 1,
+                            page=None,
+                            text=chunk,
+                            embedding=embedding,
+                        )
+                        for index, (chunk, embedding) in enumerate(
+                            zip(chunks, embeddings, strict=True)
+                        )
+                    ]
+                )
             except Exception:
                 await self.repository.delete_material(material.id)
                 raise

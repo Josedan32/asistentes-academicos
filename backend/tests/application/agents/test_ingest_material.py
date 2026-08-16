@@ -20,6 +20,7 @@ class FakeMaterialRepository:
 
     async def add_material(self, material: CourseMaterial) -> CourseMaterial:
         from dataclasses import replace
+
         saved = replace(material, id=self.next_id)
         self.next_id += 1
         self.materials.append(saved)
@@ -41,8 +42,6 @@ class FakeEmbeddingProvider:
 
 @dataclass
 class RaisingEmbeddingProvider:
-    """Simulates an unreachable/unpulled-model Ollama, per finding 3 of the final review."""
-
     async def embed(self, texts: list[str]) -> list[list[float]]:
         raise RuntimeError("embedding provider unreachable")
 
@@ -53,8 +52,7 @@ async def test_ingests_a_pdf_into_chunks_with_embeddings() -> None:
     command = IngestCourseMaterial(repository=repository, embedder=embedder)
 
     pdf_bytes = (
-        __import__("pathlib").Path(__file__).resolve().parents[2]
-        / "fixtures" / "sample.pdf"
+        __import__("pathlib").Path(__file__).resolve().parents[2] / "fixtures" / "sample.pdf"
     ).read_bytes()
 
     material = await command.execute(course_id=7, filename="guia.pdf", content=pdf_bytes)
@@ -79,15 +77,11 @@ async def test_unsupported_format_raises_before_touching_the_repository() -> Non
 
 
 async def test_a_failed_embedding_leaves_no_orphan_material_row() -> None:
-    """Regression test for finding 3: `add_material` commits before `embed()` runs. If the
-    embedder raises (Ollama down, model not pulled), the just-created material row must be
-    deleted rather than surviving as a zero-chunk zombie the admin UI lists as a success."""
     repository = FakeMaterialRepository()
     command = IngestCourseMaterial(repository=repository, embedder=RaisingEmbeddingProvider())
 
     pdf_bytes = (
-        __import__("pathlib").Path(__file__).resolve().parents[2]
-        / "fixtures" / "sample.pdf"
+        __import__("pathlib").Path(__file__).resolve().parents[2] / "fixtures" / "sample.pdf"
     ).read_bytes()
 
     with pytest.raises(RuntimeError):
@@ -103,8 +97,7 @@ async def test_reuploading_same_filename_replaces_old_chunks_instead_of_doubling
     command = IngestCourseMaterial(repository=repository, embedder=embedder)
 
     pdf_bytes = (
-        __import__("pathlib").Path(__file__).resolve().parents[2]
-        / "fixtures" / "sample.pdf"
+        __import__("pathlib").Path(__file__).resolve().parents[2] / "fixtures" / "sample.pdf"
     ).read_bytes()
 
     first = await command.execute(course_id=7, filename="guia.pdf", content=pdf_bytes)

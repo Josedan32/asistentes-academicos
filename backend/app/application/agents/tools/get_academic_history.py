@@ -1,7 +1,3 @@
-"""student_user_id is injected server-side from ToolContext, the same identity-injection
-principle as program_id/active_course_id elsewhere in this package — the model never
-supplies it and never sees another student's data."""
-
 from typing import Any
 
 from pydantic import BaseModel
@@ -34,15 +30,22 @@ async def _run(
     return {
         "history": [
             {
-                "course": entry.course_name, "period": entry.period, "status": entry.status,
-                "grade": entry.grade, "concept": entry.concept, "times_taken": entry.times_taken,
+                "course": entry.course_name,
+                "period": entry.period,
+                "status": entry.status,
+                "grade": entry.grade,
+                "concept": entry.concept,
+                "times_taken": entry.times_taken,
             }
             for entry in history
         ],
         "enrollments": [
             {
-                "course": entry.course_name, "period": entry.period, "area": entry.area,
-                "credits": entry.credits, "times_taken": entry.times_taken,
+                "course": entry.course_name,
+                "period": entry.period,
+                "area": entry.area,
+                "credits": entry.credits,
+                "times_taken": entry.times_taken,
             }
             for entry in enrollments
         ],

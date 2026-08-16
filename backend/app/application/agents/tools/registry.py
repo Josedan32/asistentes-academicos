@@ -12,8 +12,6 @@ from app.application.agents.ports import EmbeddingProvider
 
 @dataclass(frozen=True)
 class ToolContext:
-    """Server-injected values a tool handler may need but the model never supplies."""
-
     program_id: int
     current_semester: int
     active_course_id: int | None = None
@@ -22,9 +20,6 @@ class ToolContext:
 
 @dataclass(frozen=True)
 class ToolDependencies:
-    """A small explicit dependency bundle every tool handler receives, so adding a
-    dependency here doesn't change every existing tool's call signature again next time."""
-
     reader: AcademicReader
     material_reader: MaterialReader
     embedder: EmbeddingProvider
@@ -60,15 +55,6 @@ def row_count(tool_name: str, result: Any) -> int:
     return len(result)
 
 
-# Populated by app.application.agents.tools.__init__, not here: every tool module
-# imports ToolContext/ToolSpec from this file at module scope, so building this dict
-# here by importing the tool modules back would deadlock whenever some code imports a
-# tool module directly (e.g. `from ...tools.get_course_detail import ...`) before ever
-# touching this module — Python registers that submodule in sys.modules before its
-# body finishes running, and re-entering the import from here would hand back the same
-# partially-initialized module, missing SPEC. The package's __init__ is the one point
-# Python guarantees has fully run before any dotted submodule import resolves, so it is
-# the safe place to import all four tool modules and assemble this dict.
 TOOLS: dict[str, ToolSpec] = {}
 
 

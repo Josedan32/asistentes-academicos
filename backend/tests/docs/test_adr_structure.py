@@ -1,5 +1,3 @@
-"""Every ADR must carry the sections that make it a decision record, not a note."""
-
 import re
 from pathlib import Path
 

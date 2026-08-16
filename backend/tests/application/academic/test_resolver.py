@@ -50,13 +50,6 @@ def test_returns_not_found_for_unrelated_query() -> None:
 
 
 def test_mid_confidence_match_offers_only_plausible_candidates() -> None:
-    """The scored fallback must drop candidates it scored below WEAK_MATCH.
-
-    "Ingenieria de Sistemas 1" is not contained in any course name and scores 0.792
-    against "Ingenieria de Software 1", landing between WEAK_MATCH and STRONG_MATCH.
-    The other three courses score below WEAK_MATCH. Without the filter this branch
-    would return the top three regardless, offering the student two irrelevant courses.
-    """
     result = resolve_course("Ingenieria de Sistemas 1", CANDIDATES)
     assert isinstance(result, Ambiguous)
     assert [candidate.id for candidate in result.candidates] == [3]
@@ -69,6 +62,5 @@ def test_resolves_a_natural_abbreviation() -> None:
 
 
 def test_containment_needs_a_meaningful_length() -> None:
-    """A one or two character query must not match everything it appears inside."""
     assert isinstance(resolve_course("1", CANDIDATES), NotFound)
     assert isinstance(resolve_course("de", CANDIDATES), NotFound)

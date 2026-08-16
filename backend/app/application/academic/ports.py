@@ -17,8 +17,6 @@ from app.domain.academic.entities import Course, Program
 
 
 class AcademicRepository(Protocol):
-    """Write-side port. Loads and stores aggregates."""
-
     async def add_program(self, program: Program) -> Program: ...
 
     async def add_course(self, course: Course) -> Course: ...
@@ -35,8 +33,6 @@ class AcademicRepository(Protocol):
 
 
 class AcademicReader(Protocol):
-    """Read-side port. Returns flat DTOs, never domain aggregates."""
-
     async def list_programs(self) -> list[ProgramSummary]: ...
 
     async def get_program(self, program_id: int) -> ProgramSummary | None: ...
@@ -47,9 +43,7 @@ class AcademicReader(Protocol):
 
     async def course_candidates(self) -> list[CourseMatch]: ...
 
-    async def prerequisites_of(
-        self, program_id: int, course_id: int
-    ) -> list[PrerequisiteView]: ...
+    async def prerequisites_of(self, program_id: int, course_id: int) -> list[PrerequisiteView]: ...
 
     async def course_detail(
         self, course_id: int, program_id: int | None = None
@@ -63,11 +57,6 @@ class AcademicReader(Protocol):
 
 
 class StudentHistoryReader(Protocol):
-    """Read-side port for a student's own academic record: past periods' outcomes and
-    the current period's actual enrollments. Distinct from AcademicReader, which only
-    knows the static curriculum — a student's real history/enrollments are per-student
-    facts, not derivable from the curriculum shape."""
-
     async def history_of(self, student_user_id: int) -> list[AcademicHistoryEntry]: ...
 
     async def enrollments_of(self, student_user_id: int) -> list[EnrollmentEntry]: ...

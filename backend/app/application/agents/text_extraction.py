@@ -4,18 +4,21 @@ import re
 import docx
 from pypdf import PdfReader
 
-# Some PDFs encode an accented letter as a standalone acute accent glyph followed by the
-# bare vowel (e.g. "´ o" instead of "ó"), which pypdf extracts literally. Recompose
-# them so the text reads like normal Spanish instead of "definici´ on".
 _BROKEN_ACCENT = re.compile(r"´\s?([aeiouAEIOUİı])")
 _ACCENTED = {
-    "a": "á", "e": "é", "i": "í", "o": "ó", "u": "ú",
-    "A": "Á", "E": "É", "I": "Í", "O": "Ó", "U": "Ú",
-    "ı": "í", "İ": "Í",
+    "a": "á",
+    "e": "é",
+    "i": "í",
+    "o": "ó",
+    "u": "ú",
+    "A": "Á",
+    "E": "É",
+    "I": "Í",
+    "O": "Ó",
+    "U": "Ú",
+    "ı": "í",
+    "İ": "Í",
 }
-# Math-typesetting fonts (e.g. extensible parenthesis/bracket pieces around a matrix) map
-# their glyphs into the Private Use Area, which pypdf extracts as codepoints with no real
-# character behind them — they render as tofu boxes with no readable fallback.
 _PRIVATE_USE_AREA = re.compile("[-]")
 
 

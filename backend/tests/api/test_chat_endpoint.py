@@ -42,9 +42,6 @@ class ImmediateInferenceGate:
 
 
 class NeverReadyInferenceGate:
-    """Always reports a queue position behind the head, so the poll loop never breaks
-    on its own — used to exercise the `queue_timeout` bound (finding 1)."""
-
     async def enqueue(self) -> str:
         return "ticket"
 
@@ -56,9 +53,6 @@ class NeverReadyInferenceGate:
 
 
 class RaisingIsLoadedProvider:
-    """An LLMProvider whose `is_loaded()` raises, simulating an unreachable Ollama —
-    used to exercise the pre-loop error-event conversion (finding 2)."""
-
     model = "raising-v1"
 
     async def is_loaded(self) -> bool:
@@ -71,9 +65,11 @@ class RaisingIsLoadedProvider:
 async def _seed_student(session: AsyncSession) -> tuple[int, int]:
     program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     course = CourseModel(
-        code="BD2", name="Base de Datos 2",
+        code="BD2",
+        name="Base de Datos 2",
         normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        area="Datos",
+        default_credits=4,
     )
     session.add_all([program, course])
     await session.commit()
@@ -83,8 +79,16 @@ async def _seed_student(session: AsyncSession) -> tuple[int, int]:
     user = UserModel(email="ana@pascualbravo.edu.co", password_hash="x", role="student")
     session.add(user)
     await session.commit()
-    session.add(StudentProfileModel(user_id=user.id, first_name="Ana", last_name="Ruiz",
-                                     document="1", program_id=program.id, current_semester=4))
+    session.add(
+        StudentProfileModel(
+            user_id=user.id,
+            first_name="Ana",
+            last_name="Ruiz",
+            document="1",
+            program_id=program.id,
+            current_semester=4,
+        )
+    )
     await session.commit()
     return user.id, program.id
 
@@ -107,20 +111,19 @@ async def client(session_factory: async_sessionmaker[AsyncSession]):
 async def student_headers(
     client: AsyncClient, email: str = "estudiante@pascualbravo.edu.co"
 ) -> dict[str, str]:
-    """Registers and logs in a student through the real HTTP flow, so tests exercise the
-    same path a real client would (see test_endpoints.py::register_coordination for why
-    the coordination account itself is seeded directly rather than self-registered)."""
     async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
         session = await anext(sessions)
         coordinator = await SqlAlchemyUserRepository(session).add(
-            User(email=f"coord-{email}", password_hash="x", role=Role.COORDINATION), None,
+            User(email=f"coord-{email}", password_hash="x", role=Role.COORDINATION),
+            None,
         )
     coordination_token = get_token_issuer().issue(subject=str(coordinator.id), role="coordination")
 
     program = await client.post(
         "/api/v1/admin/programs",
         json={
-            "code": f"P-{coordinator.id}", "name": "Ingenieria en Software",
+            "code": f"P-{coordinator.id}",
+            "name": "Ingenieria en Software",
             "semester_count": 10,
         },
         headers={"Authorization": f"Bearer {coordination_token}"},
@@ -130,13 +133,18 @@ async def student_headers(
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": email, "password": "a-strong-password",
-            "first_name": "Ana", "last_name": "Ruiz", "document": f"doc-{coordinator.id}",
-            "program_id": program_id, "current_semester": 4,
+            "email": email,
+            "password": "a-strong-password",
+            "first_name": "Ana",
+            "last_name": "Ruiz",
+            "document": f"doc-{coordinator.id}",
+            "program_id": program_id,
+            "current_semester": 4,
         },
     )
     login = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": "a-strong-password"},
+        "/api/v1/auth/login",
+        json={"email": email, "password": "a-strong-password"},
     )
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
@@ -177,12 +185,17 @@ async def test_chat_with_a_tool_call_streams_thinking_and_tool_call_events(
     async with session_factory() as session:
         user_id, program_id = await _seed_student(session)
     token = get_token_issuer().issue(subject=str(user_id), role="student")
-    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
-        ]),
-        LLMResponse(content="Tienes 1 materia."),
-    ])
+    app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+                ],
+            ),
+            LLMResponse(content="Tienes 1 materia."),
+        ]
+    )
 
     response = await client.post(
         "/api/v1/chat", json={"message": "que veo?"}, headers={"Authorization": f"Bearer {token}"}
@@ -209,9 +222,7 @@ async def test_chat_yields_an_error_event_when_is_loaded_raises_before_streaming
 
     assert response.status_code == 200
     events = _events(response.text)
-    assert events == [
-        ("error", {"code": "agent_loop_failed", "message": "Ollama unreachable"})
-    ]
+    assert events == [("error", {"code": "agent_loop_failed", "message": "Ollama unreachable"})]
 
 
 async def test_chat_yields_a_queue_timeout_error_when_the_poll_bound_is_exceeded(
@@ -239,10 +250,6 @@ async def test_chat_yields_a_queue_timeout_error_when_the_poll_bound_is_exceeded
 async def test_general_conversation_forces_consulta_mode_even_if_payload_claims_otherwise(
     client, session_factory
 ) -> None:
-    """Regression test for finding 1: a general (no course_id) conversation must always be
-    framed as Consulta, even if the client claims a course-scoped mode like "examen" — that
-    mode's instructions tell the model to call search_course_material, a tool absent from
-    GENERAL_TOOL_NAMES, which would otherwise burn every iteration on a rejected tool call."""
     async with session_factory() as session:
         user_id, _ = await _seed_student(session)
     token = get_token_issuer().issue(subject=str(user_id), role="student")
@@ -251,7 +258,8 @@ async def test_general_conversation_forces_consulta_mode_even_if_payload_claims_
     app.dependency_overrides[get_llm_provider] = lambda: provider
 
     response = await client.post(
-        "/api/v1/chat", json={"message": "hola", "mode": "examen"},
+        "/api/v1/chat",
+        json={"message": "hola", "mode": "examen"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -264,14 +272,14 @@ async def test_general_conversation_forces_consulta_mode_even_if_payload_claims_
 async def test_chat_rejects_a_course_id_outside_the_students_curriculum(
     client, session_factory
 ) -> None:
-    """Regression test for finding 6: course_id is the only gate on which course's uploaded
-    material search_course_material can read, so it must belong to the student's own program
-    curriculum rather than being accepted as any id in the whole catalogue."""
     async with session_factory() as session:
         user_id, _ = await _seed_student(session)
         other_course = CourseModel(
-            code="ING1", name="Ingles 1", normalized_name=normalize_name("Ingles 1"),
-            area="Idiomas", default_credits=2,
+            code="ING1",
+            name="Ingles 1",
+            normalized_name=normalize_name("Ingles 1"),
+            area="Idiomas",
+            default_credits=2,
         )
         session.add(other_course)
         await session.commit()
@@ -280,7 +288,8 @@ async def test_chat_rejects_a_course_id_outside_the_students_curriculum(
     app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(responses=[])
 
     response = await client.post(
-        "/api/v1/chat", json={"message": "hola", "course_id": other_course_id},
+        "/api/v1/chat",
+        json={"message": "hola", "course_id": other_course_id},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -315,7 +324,8 @@ async def test_feedback_is_accepted_for_the_authors_own_message(client, session_
     token = get_token_issuer().issue(subject=str(user_id), role="student")
 
     response = await client.post(
-        f"/api/v1/chat/messages/{message.id}/feedback", json={"value": "up"},
+        f"/api/v1/chat/messages/{message.id}/feedback",
+        json={"value": "up"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -341,7 +351,8 @@ async def test_feedback_is_rejected_for_another_students_message(client, session
     token = get_token_issuer().issue(subject=str(other_id), role="student")
 
     response = await client.post(
-        f"/api/v1/chat/messages/{message.id}/feedback", json={"value": "up"},
+        f"/api/v1/chat/messages/{message.id}/feedback",
+        json={"value": "up"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -371,9 +382,7 @@ async def test_lists_conversations_most_recent_first(client: AsyncClient) -> Non
     app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
         responses=[LLMResponse(content="Hola, en que te ayudo?")]
     )
-    first = await client.post(
-        "/api/v1/chat", json={"message": "primera pregunta"}, headers=headers
-    )
+    first = await client.post("/api/v1/chat", json={"message": "primera pregunta"}, headers=headers)
     assert first.status_code == 200
 
     app.dependency_overrides[get_llm_provider] = lambda: FakeLLMProvider(
@@ -419,7 +428,5 @@ async def test_cannot_read_another_students_conversation(client: AsyncClient) ->
     done_event = next(data for name, data in _events(created.text) if name == "done")
     conversation_id = done_event["conversation_id"]
 
-    response = await client.get(
-        f"/api/v1/chat/conversations/{conversation_id}", headers=headers_b
-    )
+    response = await client.get(f"/api/v1/chat/conversations/{conversation_id}", headers=headers_b)
     assert response.status_code == 404

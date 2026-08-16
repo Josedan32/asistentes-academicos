@@ -1,10 +1,3 @@
-"""Resolve a free-text course name to a single course.
-
-The model repeats whatever the student typed, so exact identifiers are not available.
-When several courses are plausible the resolver returns the candidates instead of
-guessing: a confidently wrong prerequisite is the failure this system exists to prevent.
-"""
-
 import unicodedata
 from dataclasses import dataclass
 from difflib import SequenceMatcher
@@ -13,9 +6,6 @@ STRONG_MATCH = 0.86
 WEAK_MATCH = 0.62
 AMBIGUITY_MARGIN = 0.06
 
-# A query shorter than this can appear inside almost any course name (a single digit
-# or a two-letter word like "de"), so containment alone is not meaningful evidence
-# below this length. Below the guard we fall through to similarity scoring instead.
 MIN_CONTAINMENT_LENGTH = 4
 
 

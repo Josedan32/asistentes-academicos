@@ -31,8 +31,6 @@ class PrerequisiteView:
 
 @dataclass(frozen=True)
 class PrerequisiteResult:
-    """Prerequisites carry no student status or grades. See spec section 7.4."""
-
     resolved_course_name: str | None
     prerequisites: list[PrerequisiteView] = field(default_factory=list)
     candidates: list[str] = field(default_factory=list)

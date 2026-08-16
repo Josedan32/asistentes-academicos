@@ -24,22 +24,14 @@ async def client(session_factory: async_sessionmaker[AsyncSession]) -> AsyncClie
 
 
 async def register_coordination(client: AsyncClient) -> str:
-    """Coordination accounts are seeded, never self-registered.
-
-    No public endpoint creates one, so this reaches into the DB session the
-    `client` fixture already wired up (via the `get_db_session` override) to
-    persist the row directly, then issues a token for it. A directly issued
-    token used to be enough for role-gated write endpoints, which only decode
-    the claims — but `/me` does a real `find_by_id` lookup, so the row must
-    actually exist.
-    """
     from app.api.v1.deps import get_token_issuer
 
     async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
         session = await anext(sessions)
         user = await SqlAlchemyUserRepository(session).add(
-            User(email="coordinacion@pascualbravo.edu.co", password_hash="x",
-                 role=Role.COORDINATION),
+            User(
+                email="coordinacion@pascualbravo.edu.co", password_hash="x", role=Role.COORDINATION
+            ),
             None,
         )
     return get_token_issuer().issue(subject=str(user.id), role="coordination")
@@ -226,7 +218,6 @@ async def test_login_with_wrong_password_returns_401(client: AsyncClient) -> Non
 
 
 async def test_public_programs_projection_carries_course_count(client: AsyncClient) -> None:
-    """A field rename in ProgramSummary must not silently degrade to course_count=0."""
     token = await register_coordination(client)
     headers = {"Authorization": f"Bearer {token}"}
     program = await client.post(
@@ -254,7 +245,6 @@ async def test_public_programs_projection_carries_course_count(client: AsyncClie
 
 
 async def test_student_token_cannot_reach_admin_routes(client: AsyncClient) -> None:
-    """A valid token is not authorisation. Role gating is a separate check."""
     response = await client.post(
         "/api/v1/admin/programs",
         json={"code": "ISW", "name": "Ingenieria en Software", "semester_count": 10},
@@ -276,9 +266,13 @@ async def test_me_returns_student_profile_and_program(client: AsyncClient) -> No
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "ana@pascualbravo.edu.co", "password": "a-strong-password",
-            "first_name": "Ana", "last_name": "Marin", "document": "123",
-            "program_id": program_id, "current_semester": 5,
+            "email": "ana@pascualbravo.edu.co",
+            "password": "a-strong-password",
+            "first_name": "Ana",
+            "last_name": "Marin",
+            "document": "123",
+            "program_id": program_id,
+            "current_semester": 5,
         },
     )
     login = await client.post(
@@ -313,10 +307,6 @@ async def test_me_requires_authentication(client: AsyncClient) -> None:
 async def test_my_enrollments_returns_the_students_actual_enrolled_courses(
     client: AsyncClient,
 ) -> None:
-    """Regression coverage for the sidebar showing "materias del semestre N" from the
-    static curriculum instead of what the student is actually registered in — a real
-    student can be ahead or behind that grouping (e.g. testing out of English levels
-    early)."""
     from app.infrastructure.persistence.models import CourseModel, StudentEnrollmentModel
 
     token = await register_coordination(client)
@@ -330,9 +320,13 @@ async def test_my_enrollments_returns_the_students_actual_enrolled_courses(
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "ana@pascualbravo.edu.co", "password": "a-strong-password",
-            "first_name": "Ana", "last_name": "Marin", "document": "123",
-            "program_id": program_id, "current_semester": 5,
+            "email": "ana@pascualbravo.edu.co",
+            "password": "a-strong-password",
+            "first_name": "Ana",
+            "last_name": "Marin",
+            "document": "123",
+            "program_id": program_id,
+            "current_semester": 5,
         },
     )
     login = await client.post(
@@ -344,13 +338,15 @@ async def test_my_enrollments_returns_the_students_actual_enrolled_courses(
     async with aclosing(app.dependency_overrides[get_db_session]()) as sessions:
         session = await anext(sessions)
         me = await client.get("/api/v1/me", headers=student_headers)
-        course = CourseModel(code="FB0087", name="Ingles 7", area="Formacion humanistica",
-                              default_credits=1)
+        course = CourseModel(
+            code="FB0087", name="Ingles 7", area="Formacion humanistica", default_credits=1
+        )
         session.add(course)
         await session.flush()
         session.add(
-            StudentEnrollmentModel(student_user_id=me.json()["id"], course_id=course.id,
-                                    period="20262", times_taken=0)
+            StudentEnrollmentModel(
+                student_user_id=me.json()["id"], course_id=course.id, period="20262", times_taken=0
+            )
         )
         await session.commit()
 
@@ -358,8 +354,15 @@ async def test_my_enrollments_returns_the_students_actual_enrolled_courses(
     assert response.status_code == 200
     body = response.json()
     assert body == [
-        {"course_id": course.id, "course_code": "FB0087", "course_name": "Ingles 7",
-         "area": "Formacion humanistica", "credits": 1, "period": "20262", "times_taken": 0}
+        {
+            "course_id": course.id,
+            "course_code": "FB0087",
+            "course_name": "Ingles 7",
+            "area": "Formacion humanistica",
+            "credits": 1,
+            "period": "20262",
+            "times_taken": 0,
+        }
     ]
 
 
@@ -437,8 +440,12 @@ async def test_curriculum_board_returns_all_semesters_at_once(client: AsyncClien
     )
     await client.post(
         f"/api/v1/admin/programs/{program_id}/curriculum",
-        json={"course_id": second.json()["id"], "semester": 4, "credits": 4,
-              "prerequisite_course_ids": [first.json()["id"]]},
+        json={
+            "course_id": second.json()["id"],
+            "semester": 4,
+            "credits": 4,
+            "prerequisite_course_ids": [first.json()["id"]],
+        },
         headers=headers,
     )
 
@@ -493,8 +500,12 @@ async def test_editing_a_program(client: AsyncClient) -> None:
     )
     response = await client.patch(
         f"/api/v1/admin/programs/{program.json()['id']}",
-        json={"code": "ISW", "name": "Ingenieria de Software", "semester_count": 10,
-              "is_active": False},
+        json={
+            "code": "ISW",
+            "name": "Ingenieria de Software",
+            "semester_count": 10,
+            "is_active": False,
+        },
         headers=headers,
     )
     assert response.status_code == 200
@@ -544,8 +555,7 @@ async def test_uploads_lists_and_deletes_course_material(client: AsyncClient) ->
     course_id = course.json()["id"]
 
     pdf_bytes = (
-        __import__("pathlib").Path(__file__).resolve().parents[1]
-        / "fixtures" / "sample.pdf"
+        __import__("pathlib").Path(__file__).resolve().parents[1] / "fixtures" / "sample.pdf"
     ).read_bytes()
 
     uploaded = await client.post(
@@ -556,18 +566,14 @@ async def test_uploads_lists_and_deletes_course_material(client: AsyncClient) ->
     assert uploaded.status_code == 201
     material_id = uploaded.json()["id"]
 
-    listed = await client.get(
-        f"/api/v1/admin/courses/{course_id}/materials", headers=headers
-    )
+    listed = await client.get(f"/api/v1/admin/courses/{course_id}/materials", headers=headers)
     assert listed.status_code == 200
     assert [m["filename"] for m in listed.json()] == ["guia.pdf"]
 
     deleted = await client.delete(f"/api/v1/admin/materials/{material_id}", headers=headers)
     assert deleted.status_code == 204
 
-    listed_again = await client.get(
-        f"/api/v1/admin/courses/{course_id}/materials", headers=headers
-    )
+    listed_again = await client.get(f"/api/v1/admin/courses/{course_id}/materials", headers=headers)
     assert listed_again.json() == []
 
 

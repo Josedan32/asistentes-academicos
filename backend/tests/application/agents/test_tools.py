@@ -39,8 +39,12 @@ def _deps(reader: SqlAlchemyAcademicReader) -> ToolDependencies:
 
 def test_exactly_six_tools_are_registered() -> None:
     assert set(TOOLS) == {
-        "list_semester_courses", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs", "search_course_material", "get_academic_history",
+        "list_semester_courses",
+        "get_prerequisites",
+        "get_course_detail",
+        "find_course_in_programs",
+        "search_course_material",
+        "get_academic_history",
     }
 
 
@@ -51,16 +55,12 @@ def test_tool_definitions_expose_a_json_schema_for_each_tool() -> None:
 
 
 def test_get_course_detail_schema_never_exposes_program_id() -> None:
-    """The security boundary from spec §7.5, extended to program_id per residual R2:
-    it must never appear in what the model sees, only in what the server injects."""
     schema = TOOLS["get_course_detail"].definition.parameters
     assert "program_id" not in schema["properties"]
     assert set(GetCourseDetailArgs.model_fields) == {"course"}
 
 
 def test_list_semester_courses_schema_never_exposes_program_id() -> None:
-    """qwen2.5:3b does not reliably pull program_id out of the system prompt and instead
-    asks the student for it (observed in production) — the same fix as get_course_detail."""
     schema = TOOLS["list_semester_courses"].definition.parameters
     assert "program_id" not in schema["properties"]
     assert set(ListSemesterCoursesArgs.model_fields) == {"semester"}
@@ -82,10 +82,13 @@ def test_row_count_of_a_missing_course_detail() -> None:
 
 def test_row_count_of_search_course_material_counts_fragments() -> None:
     assert row_count("search_course_material", {"fragments": []}) == 0
-    assert row_count(
-        "search_course_material",
-        {"fragments": [{"text": "a", "page": None}, {"text": "b", "page": None}]},
-    ) == 2
+    assert (
+        row_count(
+            "search_course_material",
+            {"fragments": [{"text": "a", "page": None}, {"text": "b", "page": None}]},
+        )
+        == 2
+    )
 
 
 def test_to_jsonable_converts_nested_dataclasses() -> None:
@@ -115,15 +118,24 @@ async def test_get_course_detail_uses_the_injected_program_id_for_credits(
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     electronics = ProgramModel(code="IEL", name="Ingenieria Electronica", semester_count=10)
     course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add_all([software, electronics, course])
     await session.commit()
-    session.add_all([
-        CurriculumEntryModel(program_id=software.id, course_id=course.id, semester=4, credits=4),
-        CurriculumEntryModel(program_id=electronics.id, course_id=course.id, semester=5, credits=3),
-    ])
+    session.add_all(
+        [
+            CurriculumEntryModel(
+                program_id=software.id, course_id=course.id, semester=4, credits=4
+            ),
+            CurriculumEntryModel(
+                program_id=electronics.id, course_id=course.id, semester=5, credits=3
+            ),
+        ]
+    )
     await session.commit()
 
     reader = SqlAlchemyAcademicReader(session)
@@ -146,8 +158,11 @@ async def test_get_course_detail_falls_back_to_the_active_course_when_omitted(
 ) -> None:
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     course = CourseModel(
-        code="ALG", name="Algebra Lineal", normalized_name=normalize_name("Algebra Lineal"),
-        area="Matematicas", default_credits=4,
+        code="ALG",
+        name="Algebra Lineal",
+        normalized_name=normalize_name("Algebra Lineal"),
+        area="Matematicas",
+        default_credits=4,
     )
     session.add_all([software, course])
     await session.commit()
@@ -161,7 +176,8 @@ async def test_get_course_detail_falls_back_to_the_active_course_when_omitted(
     args = spec.argument_model()
 
     detail = await spec.handler(
-        _deps(reader), args,
+        _deps(reader),
+        args,
         ToolContext(program_id=software.id, current_semester=5, active_course_id=course.id),
     )
 
@@ -191,21 +207,29 @@ async def test_list_semester_courses_uses_the_injected_program_id(session: Async
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     electronics = ProgramModel(code="IEL", name="Ingenieria Electronica", semester_count=10)
     bd = CourseModel(
-        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
-        area="Datos", default_credits=3,
+        code="BD1",
+        name="Base de Datos 1",
+        normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos",
+        default_credits=3,
     )
     circuits = CourseModel(
-        code="CIR1", name="Circuitos 1", normalized_name=normalize_name("Circuitos 1"),
-        area="Electronica", default_credits=4,
+        code="CIR1",
+        name="Circuitos 1",
+        normalized_name=normalize_name("Circuitos 1"),
+        area="Electronica",
+        default_credits=4,
     )
     session.add_all([software, electronics, bd, circuits])
     await session.commit()
-    session.add_all([
-        CurriculumEntryModel(program_id=software.id, course_id=bd.id, semester=3, credits=3),
-        CurriculumEntryModel(
-            program_id=electronics.id, course_id=circuits.id, semester=3, credits=4
-        ),
-    ])
+    session.add_all(
+        [
+            CurriculumEntryModel(program_id=software.id, course_id=bd.id, semester=3, credits=3),
+            CurriculumEntryModel(
+                program_id=electronics.id, course_id=circuits.id, semester=3, credits=4
+            ),
+        ]
+    )
     await session.commit()
 
     reader = SqlAlchemyAcademicReader(session)
@@ -226,13 +250,13 @@ async def test_list_semester_courses_uses_the_injected_program_id(session: Async
 async def test_list_semester_courses_defaults_to_the_students_own_semester(
     session: AsyncSession,
 ) -> None:
-    """qwen2.5:3b sometimes asks the student which semester they mean even when they are
-    plainly asking about their own ("que puedo ver este semestre") — omitting the argument
-    must not be a dead end, it must fall back to the injected current_semester."""
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     bd = CourseModel(
-        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
-        area="Datos", default_credits=3,
+        code="BD1",
+        name="Base de Datos 1",
+        normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos",
+        default_credits=3,
     )
     session.add_all([software, bd])
     await session.commit()
@@ -257,8 +281,11 @@ async def test_list_semester_courses_honours_an_explicit_semester_over_the_defau
 ) -> None:
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     bd = CourseModel(
-        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
-        area="Datos", default_credits=3,
+        code="BD1",
+        name="Base de Datos 1",
+        normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos",
+        default_credits=3,
     )
     session.add_all([software, bd])
     await session.commit()
@@ -282,12 +309,18 @@ async def test_get_prerequisites_uses_the_injected_program_id(session: AsyncSess
     software = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     electronics = ProgramModel(code="IEL", name="Ingenieria Electronica", semester_count=10)
     bd1 = CourseModel(
-        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
-        area="Datos", default_credits=3,
+        code="BD1",
+        name="Base de Datos 1",
+        normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos",
+        default_credits=3,
     )
     bd2 = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add_all([software, electronics, bd1, bd2])
     await session.commit()
@@ -297,14 +330,15 @@ async def test_get_prerequisites_uses_the_injected_program_id(session: AsyncSess
     electronics_entry = CurriculumEntryModel(
         program_id=electronics.id, course_id=bd2.id, semester=5, credits=3
     )
-    session.add_all([
-        CurriculumEntryModel(program_id=software.id, course_id=bd1.id, semester=3, credits=3),
-        software_entry, electronics_entry,
-    ])
-    await session.commit()
-    session.add(
-        PrerequisiteModel(curriculum_entry_id=software_entry.id, required_course_id=bd1.id)
+    session.add_all(
+        [
+            CurriculumEntryModel(program_id=software.id, course_id=bd1.id, semester=3, credits=3),
+            software_entry,
+            electronics_entry,
+        ]
     )
+    await session.commit()
+    session.add(PrerequisiteModel(curriculum_entry_id=software_entry.id, required_course_id=bd1.id))
     await session.commit()
 
     reader = SqlAlchemyAcademicReader(session)
@@ -332,8 +366,11 @@ async def test_search_course_material_uses_the_active_course_by_default(
     session: AsyncSession,
 ) -> None:
     course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add(course)
     await session.commit()
@@ -343,10 +380,18 @@ async def test_search_course_material_uses_the_active_course_by_default(
         CourseMaterial(course_id=course.id, filename="guia.pdf")
     )
     assert material.id is not None
-    await material_repository.add_chunks([
-        MaterialChunk(material_id=material.id, course_id=course.id, sequence=1, page=None,
-                       text="que es normalizacion", embedding=[1.0, 0.0]),
-    ])
+    await material_repository.add_chunks(
+        [
+            MaterialChunk(
+                material_id=material.id,
+                course_id=course.id,
+                sequence=1,
+                page=None,
+                text="que es normalizacion",
+                embedding=[1.0, 0.0],
+            ),
+        ]
+    )
 
     reader = SqlAlchemyAcademicReader(session)
     material_reader = SqlAlchemyMaterialReader(session)
@@ -357,7 +402,8 @@ async def test_search_course_material_uses_the_active_course_by_default(
     )
 
     result = await spec.handler(
-        deps, args,
+        deps,
+        args,
         ToolContext(program_id=1, current_semester=1, active_course_id=course.id),
     )
 
@@ -367,11 +413,12 @@ async def test_search_course_material_uses_the_active_course_by_default(
 async def test_search_course_material_deduplicates_identical_chunk_text(
     session: AsyncSession,
 ) -> None:
-    """Regression test: duplicate rows in material_chunks (e.g. from a re-ingested
-    material) must not surface the same fragment twice in the exercise the student sees."""
     course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add(course)
     await session.commit()
@@ -381,12 +428,26 @@ async def test_search_course_material_deduplicates_identical_chunk_text(
         CourseMaterial(course_id=course.id, filename="guia.pdf")
     )
     assert material.id is not None
-    await material_repository.add_chunks([
-        MaterialChunk(material_id=material.id, course_id=course.id, sequence=1, page=None,
-                       text="que es normalizacion", embedding=[1.0, 0.0]),
-        MaterialChunk(material_id=material.id, course_id=course.id, sequence=2, page=None,
-                       text="que es normalizacion", embedding=[1.0, 0.0]),
-    ])
+    await material_repository.add_chunks(
+        [
+            MaterialChunk(
+                material_id=material.id,
+                course_id=course.id,
+                sequence=1,
+                page=None,
+                text="que es normalizacion",
+                embedding=[1.0, 0.0],
+            ),
+            MaterialChunk(
+                material_id=material.id,
+                course_id=course.id,
+                sequence=2,
+                page=None,
+                text="que es normalizacion",
+                embedding=[1.0, 0.0],
+            ),
+        ]
+    )
 
     reader = SqlAlchemyAcademicReader(session)
     material_reader = SqlAlchemyMaterialReader(session)
@@ -397,7 +458,8 @@ async def test_search_course_material_deduplicates_identical_chunk_text(
     )
 
     result = await spec.handler(
-        deps, args,
+        deps,
+        args,
         ToolContext(program_id=1, current_semester=1, active_course_id=course.id),
     )
 
@@ -407,31 +469,34 @@ async def test_search_course_material_deduplicates_identical_chunk_text(
 async def test_search_course_material_searches_a_named_course_instead_of_the_active_one(
     session: AsyncSession,
 ) -> None:
-    """A student can name a different course (a real prerequisite) to search, per spec §2 —
-    proving `Resolved` actually rewires `course_id` away from `active_course_id`. `named_course`
-    must be wired as an actual prerequisite of the active course's curriculum entry: since
-    finding 2, the `course` argument only resolves against the active course's prerequisites,
-    not the whole catalogue."""
     program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     active_course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     named_course = CourseModel(
-        code="BD1", name="Base de Datos 1", normalized_name=normalize_name("Base de Datos 1"),
-        area="Datos", default_credits=3,
+        code="BD1",
+        name="Base de Datos 1",
+        normalized_name=normalize_name("Base de Datos 1"),
+        area="Datos",
+        default_credits=3,
     )
     session.add_all([program, active_course, named_course])
     await session.commit()
     active_entry = CurriculumEntryModel(
         program_id=program.id, course_id=active_course.id, semester=4, credits=4
     )
-    session.add_all([
-        active_entry,
-        CurriculumEntryModel(
-            program_id=program.id, course_id=named_course.id, semester=3, credits=3
-        ),
-    ])
+    session.add_all(
+        [
+            active_entry,
+            CurriculumEntryModel(
+                program_id=program.id, course_id=named_course.id, semester=3, credits=3
+            ),
+        ]
+    )
     await session.commit()
     session.add(
         PrerequisiteModel(curriculum_entry_id=active_entry.id, required_course_id=named_course.id)
@@ -446,12 +511,26 @@ async def test_search_course_material_searches_a_named_course_instead_of_the_act
         CourseMaterial(course_id=named_course.id, filename="bd1.pdf")
     )
     assert active_material.id is not None and named_material.id is not None
-    await material_repository.add_chunks([
-        MaterialChunk(material_id=active_material.id, course_id=active_course.id, sequence=1,
-                       page=None, text="contenido de base de datos 2", embedding=[1.0, 0.0]),
-        MaterialChunk(material_id=named_material.id, course_id=named_course.id, sequence=1,
-                       page=None, text="contenido de base de datos 1", embedding=[1.0, 0.0]),
-    ])
+    await material_repository.add_chunks(
+        [
+            MaterialChunk(
+                material_id=active_material.id,
+                course_id=active_course.id,
+                sequence=1,
+                page=None,
+                text="contenido de base de datos 2",
+                embedding=[1.0, 0.0],
+            ),
+            MaterialChunk(
+                material_id=named_material.id,
+                course_id=named_course.id,
+                sequence=1,
+                page=None,
+                text="contenido de base de datos 1",
+                embedding=[1.0, 0.0],
+            ),
+        ]
+    )
 
     reader = SqlAlchemyAcademicReader(session)
     material_reader = SqlAlchemyMaterialReader(session)
@@ -462,7 +541,8 @@ async def test_search_course_material_searches_a_named_course_instead_of_the_act
     )
 
     result = await spec.handler(
-        deps, args,
+        deps,
+        args,
         ToolContext(program_id=program.id, current_semester=1, active_course_id=active_course.id),
     )
 
@@ -472,38 +552,44 @@ async def test_search_course_material_searches_a_named_course_instead_of_the_act
 async def test_search_course_material_cannot_reach_an_unrelated_non_prerequisite_course(
     session: AsyncSession,
 ) -> None:
-    """Regression test for finding 2: naming a course that is real but NOT a prerequisite of
-    the active course (e.g. Ingles, unrelated to Algebra Lineal) must never surface that
-    course's material — the `course` argument only widens the search to prerequisites, not
-    to the whole catalogue. Falling back to the active course's own material is acceptable;
-    returning the unrelated course's content is the exact leak this closes."""
     program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     active_course = CourseModel(
-        code="ALG", name="Algebra Lineal", normalized_name=normalize_name("Algebra Lineal"),
-        area="Matematicas", default_credits=4,
+        code="ALG",
+        name="Algebra Lineal",
+        normalized_name=normalize_name("Algebra Lineal"),
+        area="Matematicas",
+        default_credits=4,
     )
     prerequisite_course = CourseModel(
-        code="CAL1", name="Calculo 1", normalized_name=normalize_name("Calculo 1"),
-        area="Matematicas", default_credits=4,
+        code="CAL1",
+        name="Calculo 1",
+        normalized_name=normalize_name("Calculo 1"),
+        area="Matematicas",
+        default_credits=4,
     )
     unrelated_course = CourseModel(
-        code="ING1", name="Ingles 1", normalized_name=normalize_name("Ingles 1"),
-        area="Idiomas", default_credits=2,
+        code="ING1",
+        name="Ingles 1",
+        normalized_name=normalize_name("Ingles 1"),
+        area="Idiomas",
+        default_credits=2,
     )
     session.add_all([program, active_course, prerequisite_course, unrelated_course])
     await session.commit()
     active_entry = CurriculumEntryModel(
         program_id=program.id, course_id=active_course.id, semester=4, credits=4
     )
-    session.add_all([
-        active_entry,
-        CurriculumEntryModel(
-            program_id=program.id, course_id=prerequisite_course.id, semester=2, credits=4
-        ),
-        CurriculumEntryModel(
-            program_id=program.id, course_id=unrelated_course.id, semester=1, credits=2
-        ),
-    ])
+    session.add_all(
+        [
+            active_entry,
+            CurriculumEntryModel(
+                program_id=program.id, course_id=prerequisite_course.id, semester=2, credits=4
+            ),
+            CurriculumEntryModel(
+                program_id=program.id, course_id=unrelated_course.id, semester=1, credits=2
+            ),
+        ]
+    )
     await session.commit()
     session.add(
         PrerequisiteModel(
@@ -520,12 +606,26 @@ async def test_search_course_material_cannot_reach_an_unrelated_non_prerequisite
         CourseMaterial(course_id=unrelated_course.id, filename="ingles.pdf")
     )
     assert active_material.id is not None and unrelated_material.id is not None
-    await material_repository.add_chunks([
-        MaterialChunk(material_id=active_material.id, course_id=active_course.id, sequence=1,
-                       page=None, text="contenido de algebra lineal", embedding=[1.0, 0.0]),
-        MaterialChunk(material_id=unrelated_material.id, course_id=unrelated_course.id,
-                       sequence=1, page=None, text="contenido de ingles", embedding=[1.0, 0.0]),
-    ])
+    await material_repository.add_chunks(
+        [
+            MaterialChunk(
+                material_id=active_material.id,
+                course_id=active_course.id,
+                sequence=1,
+                page=None,
+                text="contenido de algebra lineal",
+                embedding=[1.0, 0.0],
+            ),
+            MaterialChunk(
+                material_id=unrelated_material.id,
+                course_id=unrelated_course.id,
+                sequence=1,
+                page=None,
+                text="contenido de ingles",
+                embedding=[1.0, 0.0],
+            ),
+        ]
+    )
 
     reader = SqlAlchemyAcademicReader(session)
     material_reader = SqlAlchemyMaterialReader(session)
@@ -536,7 +636,8 @@ async def test_search_course_material_cannot_reach_an_unrelated_non_prerequisite
     )
 
     result = await spec.handler(
-        deps, args,
+        deps,
+        args,
         ToolContext(program_id=program.id, current_semester=1, active_course_id=active_course.id),
     )
 
@@ -547,11 +648,12 @@ async def test_search_course_material_cannot_reach_an_unrelated_non_prerequisite
 async def test_search_course_material_falls_back_to_active_course_when_the_name_is_unresolved(
     session: AsyncSession,
 ) -> None:
-    """An unresolvable `course` (NotFound/Ambiguous) must not leave the tool stuck — it
-    silently keeps searching the active course rather than surfacing a resolver error."""
     active_course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add(active_course)
     await session.commit()
@@ -561,10 +663,18 @@ async def test_search_course_material_falls_back_to_active_course_when_the_name_
         CourseMaterial(course_id=active_course.id, filename="bd2.pdf")
     )
     assert material.id is not None
-    await material_repository.add_chunks([
-        MaterialChunk(material_id=material.id, course_id=active_course.id, sequence=1, page=None,
-                       text="contenido de base de datos 2", embedding=[1.0, 0.0]),
-    ])
+    await material_repository.add_chunks(
+        [
+            MaterialChunk(
+                material_id=material.id,
+                course_id=active_course.id,
+                sequence=1,
+                page=None,
+                text="contenido de base de datos 2",
+                embedding=[1.0, 0.0],
+            ),
+        ]
+    )
 
     reader = SqlAlchemyAcademicReader(session)
     material_reader = SqlAlchemyMaterialReader(session)
@@ -575,53 +685,78 @@ async def test_search_course_material_falls_back_to_active_course_when_the_name_
     )
 
     result = await spec.handler(
-        deps, args,
+        deps,
+        args,
         ToolContext(program_id=1, current_semester=1, active_course_id=active_course.id),
     )
 
     assert result["fragments"] == [{"text": "contenido de base de datos 2", "page": None}]
 
 
-async def test_get_academic_history_returns_the_injected_students_history_and_enrollments() -> (
-    None
-):
+async def test_get_academic_history_returns_the_injected_students_history_and_enrollments() -> None:
     history_reader = FakeStudentHistoryReader(
         history={
             7: [
                 AcademicHistoryEntry(
-                    course_id=1, course_code="ET0112", course_name="Matematicas Discretas",
-                    area="Fundamentacion", credits=2, period="20242", status="Aprobada",
-                    grade=3.3, concept=None, times_taken=1,
+                    course_id=1,
+                    course_code="ET0112",
+                    course_name="Matematicas Discretas",
+                    area="Fundamentacion",
+                    credits=2,
+                    period="20242",
+                    status="Aprobada",
+                    grade=3.3,
+                    concept=None,
+                    times_taken=1,
                 ),
             ],
         },
         enrollments={
             7: [
                 EnrollmentEntry(
-                    course_id=2, course_code="ET0113", course_name="Algebra Lineal",
-                    area="Fundamentacion basica", credits=4, period="20262", times_taken=0,
+                    course_id=2,
+                    course_code="ET0113",
+                    course_name="Algebra Lineal",
+                    area="Fundamentacion basica",
+                    credits=4,
+                    period="20262",
+                    times_taken=0,
                 ),
             ],
         },
     )
     deps = ToolDependencies(
-        reader=None, material_reader=FakeMaterialReader(), embedder=FakeEmbeddingProvider(),
+        reader=None,
+        material_reader=FakeMaterialReader(),
+        embedder=FakeEmbeddingProvider(),
         history_reader=history_reader,
     )
     spec = TOOLS["get_academic_history"]
 
     result = await spec.handler(
-        deps, spec.argument_model(),
+        deps,
+        spec.argument_model(),
         ToolContext(program_id=1, current_semester=5, student_user_id=7),
     )
 
     assert result["history"] == [
-        {"course": "Matematicas Discretas", "period": "20242", "status": "Aprobada",
-         "grade": 3.3, "concept": None, "times_taken": 1}
+        {
+            "course": "Matematicas Discretas",
+            "period": "20242",
+            "status": "Aprobada",
+            "grade": 3.3,
+            "concept": None,
+            "times_taken": 1,
+        }
     ]
     assert result["enrollments"] == [
-        {"course": "Algebra Lineal", "period": "20262", "area": "Fundamentacion basica",
-         "credits": 4, "times_taken": 0}
+        {
+            "course": "Algebra Lineal",
+            "period": "20262",
+            "area": "Fundamentacion basica",
+            "credits": 4,
+            "times_taken": 0,
+        }
     ]
 
 

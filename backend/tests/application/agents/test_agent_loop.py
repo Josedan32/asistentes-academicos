@@ -21,8 +21,11 @@ from tests.application.agents.fakes import (
 async def _seed_reader(session: AsyncSession) -> SqlAlchemyAcademicReader:
     program = ProgramModel(code="ISW", name="Ingenieria en Software", semester_count=10)
     course = CourseModel(
-        code="BD2", name="Base de Datos 2", normalized_name=normalize_name("Base de Datos 2"),
-        area="Datos", default_credits=4,
+        code="BD2",
+        name="Base de Datos 2",
+        normalized_name=normalize_name("Base de Datos 2"),
+        area="Datos",
+        default_credits=4,
     )
     session.add_all([program, course])
     await session.commit()
@@ -55,7 +58,9 @@ async def test_a_final_answer_without_a_tool_call_yields_one_done_event(
     events = [
         event
         async for event in _loop(provider, reader, conversations).run(
-            conversation=conversation, history=[], user_message="Que veo?",
+            conversation=conversation,
+            history=[],
+            user_message="Que veo?",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
     ]
@@ -77,7 +82,9 @@ async def test_done_event_carries_the_persisted_message_id(session: AsyncSession
     events = [
         event
         async for event in _loop(provider, reader, conversations).run(
-            conversation=conversation, history=[], user_message="Que veo?",
+            conversation=conversation,
+            history=[],
+            user_message="Que veo?",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
     ]
@@ -91,19 +98,26 @@ async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(
     session: AsyncSession,
 ) -> None:
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
-        ]),
-        LLMResponse(content="Tienes 1 materia."),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+                ],
+            ),
+            LLMResponse(content="Tienes 1 materia."),
+        ]
+    )
     conversations = InMemoryConversationRepository()
     conversation = Conversation(id=1, user_id=1, course_id=None, title="t")
 
     events = [
         event
         async for event in _loop(provider, reader, conversations).run(
-            conversation=conversation, history=[], user_message="Que veo este semestre?",
+            conversation=conversation,
+            history=[],
+            user_message="Que veo este semestre?",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
     ]
@@ -120,21 +134,25 @@ async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(
 async def test_commentary_alongside_a_tool_call_is_not_persisted_as_a_second_reply(
     session: AsyncSession,
 ) -> None:
-    """qwen2.5:3b sometimes emits text in the same completion as a tool call. That text is
-    never streamed to the client (only the final DoneEvent's content is), so persisting it
-    would surface a second, silent reply once the conversation is reloaded from history."""
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content="Dejame revisar tus materias...", tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
-        ]),
-        LLMResponse(content="Tienes 1 materia."),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content="Dejame revisar tus materias...",
+                tool_calls=[
+                    ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+                ],
+            ),
+            LLMResponse(content="Tienes 1 materia."),
+        ]
+    )
     conversations = InMemoryConversationRepository()
     conversation = Conversation(id=1, user_id=1, course_id=None, title="t")
 
     async for _ in _loop(provider, reader, conversations).run(
-        conversation=conversation, history=[], user_message="Que veo este semestre?",
+        conversation=conversation,
+        history=[],
+        user_message="Que veo este semestre?",
         context=StudentContext(program_id=program_id, current_semester=4),
     ):
         pass
@@ -147,18 +165,25 @@ async def test_invalid_arguments_return_a_tool_error_to_the_model_not_an_excepti
     session: AsyncSession,
 ) -> None:
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses",
-                             arguments={"semester": "not-an-int"})
-        ]),
-        LLMResponse(content="No pude procesar tu solicitud."),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(
+                        id="1", name="list_semester_courses", arguments={"semester": "not-an-int"}
+                    )
+                ],
+            ),
+            LLMResponse(content="No pude procesar tu solicitud."),
+        ]
+    )
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"),
+            history=[],
             user_message="Que veo?",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
@@ -171,9 +196,6 @@ async def test_invalid_arguments_return_a_tool_error_to_the_model_not_an_excepti
 
 @dataclass
 class RaisingEmbeddingProvider:
-    """Simulates OllamaEmbeddingProvider.embed's raise_for_status() failing (model not
-    pulled, connection error) — per finding 4 of the final review."""
-
     async def embed(self, texts: list[str]) -> list[list[float]]:
         raise RuntimeError("embedding provider unreachable")
 
@@ -181,28 +203,34 @@ class RaisingEmbeddingProvider:
 async def test_a_failing_tool_handler_returns_a_tool_error_to_the_model_not_an_exception(
     session: AsyncSession,
 ) -> None:
-    """Regression test for finding 4: search_course_material can raise from
-    OllamaEmbeddingProvider.embed (404/model not pulled, connection error) — every
-    pre-existing tool only ever touched SQLite, so an unhandled exception here used to
-    propagate all the way out of AgentLoop.run. This mirrors the existing invalid-arguments
-    tool-error test's pattern: the loop must yield a DoneEvent, not raise."""
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="search_course_material", arguments={"query": "algo"})
-        ]),
-        LLMResponse(content="No pude buscar el material."),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(
+                        id="1", name="search_course_material", arguments={"query": "algo"}
+                    )
+                ],
+            ),
+            LLMResponse(content="No pude buscar el material."),
+        ]
+    )
     loop = AgentLoop(
-        provider=provider, reader=reader, conversations=InMemoryConversationRepository(),
-        prompt_composer=FakePromptComposer(), material_reader=FakeMaterialReader(),
+        provider=provider,
+        reader=reader,
+        conversations=InMemoryConversationRepository(),
+        prompt_composer=FakePromptComposer(),
+        material_reader=FakeMaterialReader(),
         embedder=RaisingEmbeddingProvider(),
     )
 
     events = [
         event
         async for event in loop.run(
-            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"),
+            history=[],
             user_message="hola",
             context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
         )
@@ -216,18 +244,23 @@ async def test_a_failing_tool_handler_returns_a_tool_error_to_the_model_not_an_e
 
 async def test_unknown_tool_name_returns_an_error_to_the_model(session: AsyncSession) -> None:
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="does_not_exist", arguments={})
-        ]),
-        LLMResponse(content="ok"),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[ToolCallRequest(id="1", name="does_not_exist", arguments={})],
+            ),
+            LLMResponse(content="ok"),
+        ]
+    )
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
-            user_message="hola", context=StudentContext(program_id=program_id, current_semester=4),
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"),
+            history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4),
         )
     ]
 
@@ -239,9 +272,12 @@ async def test_hitting_the_iteration_cap_is_recorded_and_stops_calling_the_provi
     session: AsyncSession,
 ) -> None:
     reader, program_id = await _seed_reader(session)
-    always_calls_a_tool = LLMResponse(content=None, tool_calls=[
-        ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
-    ])
+    always_calls_a_tool = LLMResponse(
+        content=None,
+        tool_calls=[
+            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+        ],
+    )
     provider = FakeLLMProvider(
         responses=[always_calls_a_tool, always_calls_a_tool, always_calls_a_tool]
     )
@@ -249,8 +285,10 @@ async def test_hitting_the_iteration_cap_is_recorded_and_stops_calling_the_provi
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
-            user_message="hola", context=StudentContext(program_id=program_id, current_semester=4),
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"),
+            history=[],
+            user_message="hola",
+            context=StudentContext(program_id=program_id, current_semester=4),
         )
     ]
 
@@ -263,21 +301,26 @@ async def test_hitting_the_iteration_cap_is_recorded_and_stops_calling_the_provi
 async def test_program_id_for_get_course_detail_comes_from_context_not_the_model(
     session: AsyncSession,
 ) -> None:
-    """The model's tool call carries only `course` — proving credits still resolve means
-    the loop injected program_id server-side, per residual R2."""
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="get_course_detail",
-                             arguments={"course": "Base de Datos 2"})
-        ]),
-        LLMResponse(content="4 creditos."),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(
+                        id="1", name="get_course_detail", arguments={"course": "Base de Datos 2"}
+                    )
+                ],
+            ),
+            LLMResponse(content="4 creditos."),
+        ]
+    )
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"),
+            history=[],
             user_message="Cuantos creditos tiene BD2?",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
@@ -290,16 +333,14 @@ async def test_program_id_for_get_course_detail_comes_from_context_not_the_model
 async def test_course_scoped_conversations_never_get_list_semester_courses(
     session: AsyncSession,
 ) -> None:
-    """Regression test: a per-course conversation that can call list_semester_courses can
-    answer with a completely unrelated course's content (confirmed in production — the
-    Algebra Lineal assistant answered with English-course material)."""
     reader, program_id = await _seed_reader(session)
     provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"),
+            history=[],
             user_message="hola",
             context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
         )
@@ -307,23 +348,25 @@ async def test_course_scoped_conversations_never_get_list_semester_courses(
 
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[0] == {
-        "get_prerequisites", "get_course_detail", "find_course_in_programs",
-        "search_course_material", "get_academic_history",
+        "get_prerequisites",
+        "get_course_detail",
+        "find_course_in_programs",
+        "search_course_material",
+        "get_academic_history",
     }
 
 
 async def test_course_scoped_conversations_get_search_course_material(
     session: AsyncSession,
 ) -> None:
-    """Proves search_course_material joined the course-scoped tool set (Task C1) — the
-    tests above already prove the general/course-scoped selection mechanism itself works."""
     reader, program_id = await _seed_reader(session)
     provider = FakeLLMProvider(responses=[LLMResponse(content="ok")])
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"),
+            history=[],
             user_message="hola",
             context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
         )
@@ -331,8 +374,11 @@ async def test_course_scoped_conversations_get_search_course_material(
 
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[-1] == {
-        "search_course_material", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs", "get_academic_history",
+        "search_course_material",
+        "get_prerequisites",
+        "get_course_detail",
+        "find_course_in_programs",
+        "get_academic_history",
     }
 
 
@@ -345,7 +391,8 @@ async def test_general_conversations_still_get_list_semester_courses(
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=None, title="t"),
+            history=[],
             user_message="hola",
             context=StudentContext(program_id=program_id, current_semester=4),
         )
@@ -353,29 +400,35 @@ async def test_general_conversations_still_get_list_semester_courses(
 
     assert isinstance(events[-1], DoneEvent)
     assert provider.tool_names_received[0] == {
-        "list_semester_courses", "get_prerequisites", "get_course_detail",
-        "find_course_in_programs", "get_academic_history",
+        "list_semester_courses",
+        "get_prerequisites",
+        "get_course_detail",
+        "find_course_in_programs",
+        "get_academic_history",
     }
 
 
 async def test_a_course_scoped_conversation_rejects_a_list_semester_courses_call(
     session: AsyncSession,
 ) -> None:
-    """Even if the model calls a tool outside its offered set (e.g. a stale/hallucinated
-    call), the loop must not execute it — this is the same defense-in-depth as the unknown
-    tool name branch, not just relying on the tools list sent to the provider."""
     reader, program_id = await _seed_reader(session)
-    provider = FakeLLMProvider(responses=[
-        LLMResponse(content=None, tool_calls=[
-            ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
-        ]),
-        LLMResponse(content="ok"),
-    ])
+    provider = FakeLLMProvider(
+        responses=[
+            LLMResponse(
+                content=None,
+                tool_calls=[
+                    ToolCallRequest(id="1", name="list_semester_courses", arguments={"semester": 4})
+                ],
+            ),
+            LLMResponse(content="ok"),
+        ]
+    )
 
     events = [
         event
         async for event in _loop(provider, reader).run(
-            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"), history=[],
+            conversation=Conversation(id=1, user_id=1, course_id=5, title="t"),
+            history=[],
             user_message="hola",
             context=StudentContext(program_id=program_id, current_semester=4, active_course_id=5),
         )

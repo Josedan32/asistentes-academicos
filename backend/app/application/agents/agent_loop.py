@@ -30,11 +30,17 @@ MAX_ITERATIONS = 3
 TOOL_TIMEOUT_SECONDS = 10.0
 
 COURSE_SCOPED_TOOL_NAMES = {
-    "search_course_material", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+    "search_course_material",
+    "get_prerequisites",
+    "get_course_detail",
+    "find_course_in_programs",
     "get_academic_history",
 }
 GENERAL_TOOL_NAMES = {
-    "list_semester_courses", "get_prerequisites", "get_course_detail", "find_course_in_programs",
+    "list_semester_courses",
+    "get_prerequisites",
+    "get_course_detail",
+    "find_course_in_programs",
     "get_academic_history",
 }
 
@@ -111,18 +117,29 @@ class AgentLoop:
 
             if not response.tool_calls:
                 saved = await self.conversations.add_message(
-                    Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
-                            content=response.content or "", prompt_version=prompt_version)
+                    Message(
+                        conversation_id=conversation_id,
+                        role=MessageRole.ASSISTANT,
+                        content=response.content or "",
+                        prompt_version=prompt_version,
+                    )
                 )
                 assert saved.id is not None
-                yield DoneEvent(content=response.content or "", tool_count=tool_count,
-                                 hit_iteration_cap=False, message_id=saved.id)
+                yield DoneEvent(
+                    content=response.content or "",
+                    tool_count=tool_count,
+                    hit_iteration_cap=False,
+                    message_id=saved.id,
+                )
                 return
 
-            # Empty content: this row only anchors tool calls, never a visible reply.
             assistant_row = await self.conversations.add_message(
-                Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
-                        content="", prompt_version=prompt_version)
+                Message(
+                    conversation_id=conversation_id,
+                    role=MessageRole.ASSISTANT,
+                    content="",
+                    prompt_version=prompt_version,
+                )
             )
             messages.append(LLMMessage(role="assistant", content=response.content or ""))
 
@@ -132,16 +149,22 @@ class AgentLoop:
                 spec = TOOLS.get(call.name)
                 if spec is None or call.name not in active_tool_names:
                     error_text = json.dumps({"error": f"unknown tool: {call.name}"})
-                    messages.append(LLMMessage(role="tool", name=call.name,
-                                                tool_call_id=call.id, content=error_text))
+                    messages.append(
+                        LLMMessage(
+                            role="tool", name=call.name, tool_call_id=call.id, content=error_text
+                        )
+                    )
                     continue
 
                 try:
                     args = spec.argument_model.model_validate(call.arguments)
                 except ValidationError as error:
                     error_text = json.dumps({"error": str(error)})
-                    messages.append(LLMMessage(role="tool", name=call.name,
-                                                tool_call_id=call.id, content=error_text))
+                    messages.append(
+                        LLMMessage(
+                            role="tool", name=call.name, tool_call_id=call.id, content=error_text
+                        )
+                    )
                     continue
 
                 start = time.monotonic()
@@ -149,8 +172,10 @@ class AgentLoop:
                     result = await asyncio.wait_for(
                         spec.handler(
                             ToolDependencies(
-                                reader=self.reader, material_reader=self.material_reader,
-                                embedder=self.embedder, history_reader=self.history_reader,
+                                reader=self.reader,
+                                material_reader=self.material_reader,
+                                embedder=self.embedder,
+                                history_reader=self.history_reader,
                             ),
                             args,
                             ToolContext(
@@ -164,13 +189,19 @@ class AgentLoop:
                     )
                 except TimeoutError:
                     error_text = json.dumps({"error": "tool timed out"})
-                    messages.append(LLMMessage(role="tool", name=call.name,
-                                                tool_call_id=call.id, content=error_text))
+                    messages.append(
+                        LLMMessage(
+                            role="tool", name=call.name, tool_call_id=call.id, content=error_text
+                        )
+                    )
                     continue
                 except Exception as error:
                     error_text = json.dumps({"error": str(error)})
-                    messages.append(LLMMessage(role="tool", name=call.name,
-                                                tool_call_id=call.id, content=error_text))
+                    messages.append(
+                        LLMMessage(
+                            role="tool", name=call.name, tool_call_id=call.id, content=error_text
+                        )
+                    )
                     continue
 
                 duration_ms = int((time.monotonic() - start) * 1000)
@@ -180,20 +211,45 @@ class AgentLoop:
 
                 assert assistant_row.id is not None
                 await self.conversations.add_tool_call(
-                    ToolCall(message_id=assistant_row.id, name=call.name,
-                             arguments=call.arguments, result=jsonable, duration_ms=duration_ms,
-                             row_count=rows, sequence=sequence)
+                    ToolCall(
+                        message_id=assistant_row.id,
+                        name=call.name,
+                        arguments=call.arguments,
+                        result=jsonable,
+                        duration_ms=duration_ms,
+                        row_count=rows,
+                        sequence=sequence,
+                    )
                 )
-                yield ToolCallEvent(name=call.name, arguments=call.arguments, result=jsonable,
-                                     duration_ms=duration_ms, row_count=rows)
+                yield ToolCallEvent(
+                    name=call.name,
+                    arguments=call.arguments,
+                    result=jsonable,
+                    duration_ms=duration_ms,
+                    row_count=rows,
+                )
 
-                messages.append(LLMMessage(role="tool", name=call.name, tool_call_id=call.id,
-                                            content=json.dumps(jsonable)))
+                messages.append(
+                    LLMMessage(
+                        role="tool",
+                        name=call.name,
+                        tool_call_id=call.id,
+                        content=json.dumps(jsonable),
+                    )
+                )
 
         saved = await self.conversations.add_message(
-            Message(conversation_id=conversation_id, role=MessageRole.ASSISTANT,
-                    content=FALLBACK_MESSAGE, prompt_version=prompt_version)
+            Message(
+                conversation_id=conversation_id,
+                role=MessageRole.ASSISTANT,
+                content=FALLBACK_MESSAGE,
+                prompt_version=prompt_version,
+            )
         )
         assert saved.id is not None
-        yield DoneEvent(content=FALLBACK_MESSAGE, tool_count=tool_count, hit_iteration_cap=True,
-                         message_id=saved.id)
+        yield DoneEvent(
+            content=FALLBACK_MESSAGE,
+            tool_count=tool_count,
+            hit_iteration_cap=True,
+            message_id=saved.id,
+        )

@@ -62,15 +62,17 @@ class SqlAlchemyConversationReader:
             select(ConversationModel, CourseModel.name)
             .outerjoin(CourseModel, CourseModel.id == ConversationModel.course_id)
             .where(ConversationModel.user_id == user_id)
-            # created_at alone can tie at typical clock resolution when rows are
-            # inserted back-to-back within a test or a fast request burst; the id
-            # tiebreaker keeps "most recent first" deterministic.
             .order_by(ConversationModel.created_at.desc(), ConversationModel.id.desc())
         )
         rows = (await self._session.execute(statement)).all()
         return [
-            ConversationSummary(id=c.id, title=c.title, course_id=c.course_id,
-                                 course_name=course_name, created_at=c.created_at)
+            ConversationSummary(
+                id=c.id,
+                title=c.title,
+                course_id=c.course_id,
+                course_name=course_name,
+                created_at=c.created_at,
+            )
             for c, course_name in rows
         ]
 
@@ -109,15 +111,24 @@ class SqlAlchemyConversationReader:
             ).scalar_one_or_none()
             result.append(
                 MessageDetail(
-                    id=message.id, role=message.role, content=message.content,
+                    id=message.id,
+                    role=message.role,
+                    content=message.content,
                     tool_calls=[
-                        ToolCallView(id=t.id, name=t.name, arguments=t.arguments,
-                                     result=t.result, duration_ms=t.duration_ms,
-                                     row_count=t.row_count, sequence=t.sequence)
+                        ToolCallView(
+                            id=t.id,
+                            name=t.name,
+                            arguments=t.arguments,
+                            result=t.result,
+                            duration_ms=t.duration_ms,
+                            row_count=t.row_count,
+                            sequence=t.sequence,
+                        )
                         for t in tool_call_rows
                     ],
                     feedback=FeedbackView(value=feedback_row.value, comment=feedback_row.comment)
-                    if feedback_row is not None else None,
+                    if feedback_row is not None
+                    else None,
                 )
             )
         return result

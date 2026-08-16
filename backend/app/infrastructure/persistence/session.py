@@ -14,12 +14,6 @@ from app.infrastructure.config import get_settings
 
 
 def create_database_engine(url: str) -> AsyncEngine:
-    """Build an async engine with SQLite foreign keys actually enforced.
-
-    pysqlite leaves `PRAGMA foreign_keys` off on every new connection, which makes
-    the ondelete clauses declared on the models inert. The listener is guarded by
-    dialect so it stays correct when PostgreSQL arrives in Phase 2.
-    """
     engine = create_async_engine(url, echo=False)
     if engine.dialect.name == "sqlite":
 

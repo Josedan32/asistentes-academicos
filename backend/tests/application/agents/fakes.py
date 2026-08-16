@@ -1,6 +1,3 @@
-"""Test doubles for the agents module. See spec §12: a fake LLMProvider is what makes
-the loop testable without a model running."""
-
 from dataclasses import dataclass, field
 
 from app.application.academic.dto import AcademicHistoryEntry, EnrollmentEntry
@@ -21,9 +18,7 @@ class FakeLLMProvider:
     async def is_loaded(self) -> bool:
         return self.loaded
 
-    async def complete(
-        self, messages: list[LLMMessage], tools: list | None = None
-    ) -> LLMResponse:
+    async def complete(self, messages: list[LLMMessage], tools: list | None = None) -> LLMResponse:
         self.calls.append(messages)
         self.tool_names_received.append({t.name for t in tools} if tools else set())
         if len(self.calls) > len(self.responses):
@@ -36,10 +31,6 @@ class FakeLLMProvider:
 
 @dataclass
 class FakeMaterialReader:
-    """No-database MaterialReader double: never actually called by the four existing
-    tools, only by search_course_material's own tests, which want real search behavior
-    and use SqlAlchemyMaterialReader instead — this stub just satisfies the signature."""
-
     materials: list[CourseMaterial] = field(default_factory=list)
     chunks: list[MaterialChunk] = field(default_factory=list)
 
@@ -57,8 +48,6 @@ class FakeMaterialReader:
 
 @dataclass
 class FakeEmbeddingProvider:
-    """No-network EmbeddingProvider double: a fixed-length vector per input."""
-
     dimensions: int = 4
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
@@ -67,8 +56,6 @@ class FakeEmbeddingProvider:
 
 @dataclass
 class FakeStudentHistoryReader:
-    """No-database StudentHistoryReader double, keyed by student_user_id."""
-
     history: dict[int, list[AcademicHistoryEntry]] = field(default_factory=dict)
     enrollments: dict[int, list[EnrollmentEntry]] = field(default_factory=dict)
 
@@ -90,9 +77,6 @@ class FakePromptComposer:
 
 @dataclass
 class InMemoryConversationRepository:
-    """A ConversationRepository that assigns ids sequentially, without a database.
-    Records everything persisted so tests can assert on it directly."""
-
     messages: list[Message] = field(default_factory=list)
     tool_calls: list[ToolCall] = field(default_factory=list)
     feedback: list[MessageFeedback] = field(default_factory=list)

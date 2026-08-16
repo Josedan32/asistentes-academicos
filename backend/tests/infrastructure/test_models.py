@@ -27,16 +27,12 @@ async def test_rejects_duplicate_course_in_same_program(session: AsyncSession) -
     await session.commit()
 
     session.add(
-        CurriculumEntryModel(
-            program_id=program.id, course_id=course.id, semester=4, credits=3
-        )
+        CurriculumEntryModel(program_id=program.id, course_id=course.id, semester=4, credits=3)
     )
     await session.commit()
 
     session.add(
-        CurriculumEntryModel(
-            program_id=program.id, course_id=course.id, semester=5, credits=3
-        )
+        CurriculumEntryModel(program_id=program.id, course_id=course.id, semester=5, credits=3)
     )
     with pytest.raises(IntegrityError):
         await session.commit()
@@ -49,15 +45,11 @@ async def test_prerequisite_links_to_curriculum_entry(session: AsyncSession) -> 
     session.add_all([program, first, second])
     await session.commit()
 
-    entry = CurriculumEntryModel(
-        program_id=program.id, course_id=second.id, semester=4, credits=3
-    )
+    entry = CurriculumEntryModel(program_id=program.id, course_id=second.id, semester=4, credits=3)
     session.add(entry)
     await session.commit()
 
-    session.add(
-        PrerequisiteModel(curriculum_entry_id=entry.id, required_course_id=first.id)
-    )
+    session.add(PrerequisiteModel(curriculum_entry_id=entry.id, required_course_id=first.id))
     await session.commit()
 
     stored = (await session.execute(select(PrerequisiteModel))).scalars().all()
@@ -65,7 +57,6 @@ async def test_prerequisite_links_to_curriculum_entry(session: AsyncSession) -> 
 
 
 async def test_foreign_keys_are_enforced(session: AsyncSession) -> None:
-    """Without PRAGMA foreign_keys=ON the ondelete clauses on every model are inert."""
     session.add(CurriculumEntryModel(program_id=999, course_id=999, semester=1, credits=3))
     with pytest.raises(IntegrityError):
         await session.commit()

@@ -33,11 +33,13 @@ def _to_ollama_tools(tools: list[ToolDefinition]) -> list[dict[str, Any]]:
 
 
 class OllamaProvider:
-    """Talks to Ollama's native `/api/chat` and `/api/ps` endpoints — never the
-    OpenAI-compatible `/v1/chat/completions` shim (ADR 0006)."""
-
     def __init__(
-        self, *, base_url: str, model: str, num_ctx: int, keep_alive: str,
+        self,
+        *,
+        base_url: str,
+        model: str,
+        num_ctx: int,
+        keep_alive: str,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
@@ -78,8 +80,6 @@ class OllamaProvider:
 
         body = response.json()
         message = body.get("message", {})
-        # Ollama returns `arguments` as a native object, not a JSON-encoded string like
-        # OpenAI/Groq. json.loads-ing it here would raise on the first tool call.
         tool_calls = [
             ToolCallRequest(
                 id=f"ollama-{index}",

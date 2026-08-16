@@ -8,10 +8,6 @@ SEQUENCE_KEY = "inference:seq"
 
 
 class RedisInferenceGate:
-    """A sorted set keyed by an ever-increasing sequence number gives FIFO order and an
-    O(log n) position lookup (ZRANK), atomically, without a separate lock — Redis is
-    single-threaded (spec §8.2)."""
-
     def __init__(self, redis: Redis) -> None:
         self._redis = redis
 

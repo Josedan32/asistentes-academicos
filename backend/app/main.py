@@ -15,12 +15,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Warn when the server is running on the published development signing key.
-
-    A known signing key lets anyone mint a token for any user and any role, including
-    coordination. This warns rather than refuses: the test suite and local development
-    both run on defaults, and a hard failure there gets worked around rather than fixed.
-    """
     if get_settings().jwt_secret == DEV_JWT_SECRET:
         logger.warning(
             "JWT_SECRET is still the development default. Anyone who reads this "

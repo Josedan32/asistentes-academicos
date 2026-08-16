@@ -1,5 +1,3 @@
-"""The spike's parsing helper is pure and load-bearing for Plan 2's Ollama adapter."""
-
 import importlib.util
 from pathlib import Path
 from types import ModuleType
@@ -34,7 +32,6 @@ def test_extracts_name_and_arguments() -> None:
 
 
 def test_arguments_arrive_as_a_mapping_not_a_json_string() -> None:
-    """Ollama differs from the OpenAI wire format here. Plan 2's adapter relies on it."""
     payload = {
         "message": {
             "tool_calls": [
