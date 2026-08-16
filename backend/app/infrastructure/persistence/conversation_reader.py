@@ -8,6 +8,7 @@ from app.application.agents.dto import (
     ToolCallView,
 )
 from app.domain.agents.entities import Conversation, Message, MessageRole
+from app.domain.agents.modes import ChatMode
 from app.infrastructure.persistence.models import (
     ConversationModel,
     CourseModel,
@@ -44,6 +45,7 @@ class SqlAlchemyConversationReader:
                 role=MessageRole(row.role),
                 content=row.content,
                 prompt_version=row.prompt_version,
+                mode=ChatMode(row.mode) if row.mode is not None else None,
             )
             for row in rows
         ]
@@ -114,6 +116,7 @@ class SqlAlchemyConversationReader:
                     id=message.id,
                     role=message.role,
                     content=message.content,
+                    mode=ChatMode(message.mode) if message.mode is not None else None,
                     tool_calls=[
                         ToolCallView(
                             id=t.id,

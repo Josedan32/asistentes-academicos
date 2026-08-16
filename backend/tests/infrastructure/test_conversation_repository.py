@@ -8,6 +8,7 @@ from app.domain.agents.entities import (
     MessageRole,
     ToolCall,
 )
+from app.domain.agents.modes import ChatMode
 from app.infrastructure.persistence.conversation_reader import SqlAlchemyConversationReader
 from app.infrastructure.persistence.conversation_repository import (
     SqlAlchemyConversationRepository,
@@ -135,3 +136,37 @@ async def test_full_history_includes_tool_calls_and_feedback(session: AsyncSessi
     assert history[1].tool_calls[0].name == "get_prerequisites"
     assert history[1].feedback is not None
     assert history[1].feedback.value == "up"
+
+
+async def test_round_trips_the_mode_a_message_was_sent_under(session: AsyncSession) -> None:
+    repository = SqlAlchemyConversationRepository(session)
+    reader = SqlAlchemyConversationReader(session)
+    user_id = await _seed_user(session)
+    conversation = await repository.create(Conversation(user_id=user_id, course_id=None, title="X"))
+    assert conversation.id is not None
+    await repository.add_message(
+        Message(
+            conversation_id=conversation.id, role=MessageRole.ASSISTANT, content="un ejercicio",
+            mode=ChatMode.PRACTICA,
+        )
+    )
+
+    history = await reader.history(conversation.id)
+    assert history[0].mode == ChatMode.PRACTICA
+
+    full_history = await reader.full_history(conversation.id)
+    assert full_history[0].mode == ChatMode.PRACTICA
+
+
+async def test_a_message_with_no_recorded_mode_reads_back_as_none(session: AsyncSession) -> None:
+    repository = SqlAlchemyConversationRepository(session)
+    reader = SqlAlchemyConversationReader(session)
+    user_id = await _seed_user(session)
+    conversation = await repository.create(Conversation(user_id=user_id, course_id=None, title="X"))
+    assert conversation.id is not None
+    await repository.add_message(
+        Message(conversation_id=conversation.id, role=MessageRole.USER, content="hola")
+    )
+
+    history = await reader.history(conversation.id)
+    assert history[0].mode is None

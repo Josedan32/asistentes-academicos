@@ -31,6 +31,7 @@ class SqlAlchemyConversationRepository:
             role=str(message.role),
             content=message.content,
             prompt_version=message.prompt_version,
+            mode=str(message.mode) if message.mode is not None else None,
         )
         self._session.add(model)
         await self._session.commit()

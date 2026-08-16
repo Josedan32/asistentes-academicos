@@ -293,6 +293,7 @@ async def get_conversation(
                 id=m.id,
                 role=m.role,
                 content=m.content,
+                mode=str(m.mode) if m.mode is not None else None,
                 tool_calls=[
                     ToolCallOut(
                         id=t.id,

@@ -38,6 +38,7 @@ class MessageDetail:
     id: int
     role: str
     content: str
+    mode: ChatMode | None = None
     tool_calls: list[ToolCallView] = field(default_factory=list)
     feedback: FeedbackView | None = None
 

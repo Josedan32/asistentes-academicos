@@ -151,6 +151,7 @@ class MessageModel(Base):
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
     prompt_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    mode: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

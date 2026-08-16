@@ -98,7 +98,10 @@ class AgentLoop:
         system_prompt, prompt_version = self.prompt_composer.compose_system_prompt(context)
 
         await self.conversations.add_message(
-            Message(conversation_id=conversation_id, role=MessageRole.USER, content=user_message)
+            Message(
+                conversation_id=conversation_id, role=MessageRole.USER, content=user_message,
+                mode=context.mode,
+            )
         )
 
         messages = [LLMMessage(role="system", content=system_prompt)]
@@ -122,6 +125,7 @@ class AgentLoop:
                         role=MessageRole.ASSISTANT,
                         content=response.content or "",
                         prompt_version=prompt_version,
+                        mode=context.mode,
                     )
                 )
                 assert saved.id is not None
@@ -139,6 +143,7 @@ class AgentLoop:
                     role=MessageRole.ASSISTANT,
                     content="",
                     prompt_version=prompt_version,
+                    mode=context.mode,
                 )
             )
             messages.append(LLMMessage(role="assistant", content=response.content or ""))
@@ -244,6 +249,7 @@ class AgentLoop:
                 role=MessageRole.ASSISTANT,
                 content=FALLBACK_MESSAGE,
                 prompt_version=prompt_version,
+                mode=context.mode,
             )
         )
         assert saved.id is not None

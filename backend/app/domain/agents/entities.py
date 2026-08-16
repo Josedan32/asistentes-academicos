@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
+from app.domain.agents.modes import ChatMode
+
 
 class MessageRole(StrEnum):
     USER = "user"
@@ -31,6 +33,7 @@ class Message:
     role: MessageRole
     content: str
     prompt_version: str | None = None
+    mode: ChatMode | None = None
     id: int | None = None
 
 

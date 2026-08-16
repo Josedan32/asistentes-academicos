@@ -6,6 +6,7 @@ from app.application.agents.agent_loop import AgentLoop, DoneEvent, ToolCallEven
 from app.application.agents.dto import StudentContext
 from app.application.agents.llm_types import LLMResponse, ToolCallRequest
 from app.domain.agents.entities import Conversation
+from app.domain.agents.modes import ChatMode
 from app.infrastructure.persistence.academic_reader import SqlAlchemyAcademicReader
 from app.infrastructure.persistence.academic_repository import normalize_name
 from app.infrastructure.persistence.models import CourseModel, CurriculumEntryModel, ProgramModel
@@ -92,6 +93,25 @@ async def test_done_event_carries_the_persisted_message_id(session: AsyncSession
     done = next(e for e in events if isinstance(e, DoneEvent))
     assert isinstance(done.message_id, int)
     assert done.message_id == conversations.messages[-1].id
+
+
+async def test_every_persisted_message_carries_the_mode_it_was_sent_under(
+    session: AsyncSession,
+) -> None:
+    reader, program_id = await _seed_reader(session)
+    provider = FakeLLMProvider(responses=[LLMResponse(content="Un ejercicio.")])
+    conversations = InMemoryConversationRepository()
+    conversation = Conversation(id=1, user_id=1, course_id=None, title="t")
+
+    async for _ in _loop(provider, reader, conversations).run(
+        conversation=conversation,
+        history=[],
+        user_message="Dame un ejercicio",
+        context=StudentContext(program_id=program_id, current_semester=4, mode=ChatMode.PRACTICA),
+    ):
+        pass
+
+    assert [m.mode for m in conversations.messages] == [ChatMode.PRACTICA, ChatMode.PRACTICA]
 
 
 async def test_a_tool_call_then_a_final_answer_yields_thinking_tool_call_done(

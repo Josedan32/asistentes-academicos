@@ -165,6 +165,7 @@ class MessageOut(BaseModel):
     id: int
     role: str
     content: str
+    mode: str | None
     tool_calls: list[ToolCallOut]
     feedback: FeedbackOut | None
 
