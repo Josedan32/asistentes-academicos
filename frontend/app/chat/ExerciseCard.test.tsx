@@ -37,4 +37,21 @@ describe("ExerciseCard", () => {
     );
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("shows a raw material fragment as plain text, not parsed as markdown/LaTeX", () => {
+    const rawFragment = {
+      ...toolCall,
+      result: {
+        fragments: [
+          { text: "1 1 0\n0 1 0\n0 0 1\n**no es negrita** y $no es formula$", page: 62 },
+        ],
+      },
+    };
+    const { container } = render(<ExerciseCard toolCall={rawFragment} onSubmitAnswer={() => {}} />);
+
+    expect(container.querySelector(".katex")).not.toBeInTheDocument();
+    expect(container.querySelector("strong")).not.toBeInTheDocument();
+    expect(container.textContent).toContain("**no es negrita**");
+    expect(container.textContent).toContain("$no es formula$");
+  });
 });

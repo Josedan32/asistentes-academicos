@@ -3,7 +3,6 @@
 import { PenLine } from "lucide-react";
 import type { ChatToolCall } from "@/lib/hooks/useChatStream";
 import { ExerciseAnswerPanel } from "./ExerciseAnswerPanel";
-import { MarkdownContent } from "./MarkdownContent";
 
 interface MaterialFragment {
   text: string;
@@ -40,8 +39,11 @@ export function ExerciseCard({
 
       <div className="flex flex-col gap-3 px-[14px] pb-[14px]">
         {fragments.map((fragment, index) => (
-          <div key={index} className="text-[14.5px] leading-[1.6] text-text-body">
-            <MarkdownContent content={fragment.text} />
+          <div
+            key={index}
+            className="whitespace-pre-wrap text-[14.5px] leading-[1.6] text-text-body"
+          >
+            {fragment.text}
           </div>
         ))}
         <ExerciseAnswerPanel onSubmitAnswer={onSubmitAnswer} />
