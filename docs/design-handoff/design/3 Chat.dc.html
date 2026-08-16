@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin:0; background:#EDEFF2; font-family:Barlow, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#1D5B96; text-decoration:none; }
+  a:hover { color:#0B2140; }
+  * { box-sizing:border-box; }
+  ::placeholder { color:#9AA3AE; }
+  @keyframes pb-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes pb-spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 20px 60px; min-height:100vh;">
+  <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#FFFFFF; border:1px solid #DDE1E7; border-radius:10px; box-shadow:0 6px 18px rgba(11,33,64,.08);">
+    <span style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE; padding:0 10px 0 6px;">Pantallas</span>
+      <a href="./1 Login.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">1 · Login</a>
+      <a href="./2 Registro.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">2 · Registro</a>
+      <a href="./3 Chat.dc.html" style="background:#0B2140; color:#FFFFFF; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">3 · Chat</a>
+      <a href="./4 Carreras.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">4 · Carreras</a>
+      <a href="./5 Materias.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">5 · Materias</a>
+      <a href="./6 Malla.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">6 · Malla</a>
+  </div>
+
+  <div data-screen-label="03 Chat" style="width:1440px; height:900px; background:#FFFFFF; border:1px solid #DDE1E7; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:288px 1fr; grid-template-rows:100%;">
+
+    <!-- sidebar -->
+    <div style="background:#0B2140; display:flex; flex-direction:column; overflow:hidden; min-height:0;">
+      <div style="padding:20px 18px 16px; flex:0 0 auto; display:flex; flex-direction:column; gap:16px;">
+        <div style="background:#FFFFFF; border-radius:6px; padding:9px 12px;">
+          <img src="uploads/PacualBravoLogo.jpg" alt="Pascual Bravo" style="height:26px; display:block;" />
+        </div>
+        <button style="height:42px; border:1px solid #2C4E78; background:#12345F; color:#FFFFFF; border-radius:8px; font:600 14px Barlow; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;" style-hover="background:#1A4374">+ Nueva conversación</button>
+      </div>
+
+      <div style="padding:0 18px 14px; display:flex; flex-direction:column; gap:9px; flex:0 0 auto;">
+        <div style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#5F82AC;">Asistente</div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:7px; background:#1D5B96; color:#FFFFFF; cursor:pointer;">
+            <div style="width:7px; height:7px; border-radius:4px; background:#7FD1C1;"></div>
+            <div style="font:600 14px Barlow;">General de Carrera</div>
+          </div>
+          <div style="font:500 11px/1 Barlow; letter-spacing:.1em; text-transform:uppercase; color:#5F82AC; padding:12px 12px 4px;">Materias · semestre 5</div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; color:#C6D5E6; cursor:pointer;" style-hover="background:#12345F">
+            <div style="width:7px; height:7px; border-radius:4px; background:#3F6693;"></div>
+            <div style="font:400 14px Barlow;">Base de Datos 2</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; color:#C6D5E6; cursor:pointer;" style-hover="background:#12345F">
+            <div style="width:7px; height:7px; border-radius:4px; background:#3F6693;"></div>
+            <div style="font:400 14px Barlow;">Ingeniería de Software 1</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; color:#C6D5E6; cursor:pointer;" style-hover="background:#12345F">
+            <div style="width:7px; height:7px; border-radius:4px; background:#3F6693;"></div>
+            <div style="font:400 14px Barlow;">Sistemas Operativos</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; color:#C6D5E6; cursor:pointer;" style-hover="background:#12345F">
+            <div style="width:7px; height:7px; border-radius:4px; background:#3F6693;"></div>
+            <div style="font:400 14px Barlow;">Estadística</div>
+          </div>
+        </div>
+        <div style="font:400 12px/1.45 Barlow; color:#5F82AC; padding:6px 12px 0;">Cambiar de asistente abre una conversación nueva. No se comparte contexto entre materias.</div>
+      </div>
+
+      <div style="height:1px; background:#1B375C; margin:6px 18px 14px;"></div>
+
+      <div style="flex:1 1 0; min-height:0; overflow:auto; padding:0 18px; display:flex; flex-direction:column; gap:2px;">
+        <div style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#5F82AC; padding-bottom:8px;">Recientes</div>
+        <div style="padding:9px 12px; border-radius:7px; background:#12345F; cursor:pointer;">
+          <div style="font:500 14px/1.3 Barlow; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">¿Puedo ver Base de Datos 2?</div>
+          <div style="font:400 12px Barlow; color:#5F82AC; padding-top:3px;">General · hoy</div>
+        </div>
+        <div style="padding:9px 12px; border-radius:7px; cursor:pointer;" style-hover="background:#12345F">
+          <div style="font:500 14px/1.3 Barlow; color:#C6D5E6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Normalización 3FN con ejemplo</div>
+          <div style="font:400 12px Barlow; color:#5F82AC; padding-top:3px;">Base de Datos 2 · ayer</div>
+        </div>
+        <div style="padding:9px 12px; border-radius:7px; cursor:pointer;" style-hover="background:#12345F">
+          <div style="font:500 14px/1.3 Barlow; color:#C6D5E6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Diferencia entre proceso e hilo</div>
+          <div style="font:400 12px Barlow; color:#5F82AC; padding-top:3px;">Sistemas Operativos · 2 días</div>
+        </div>
+        <div style="padding:9px 12px; border-radius:7px; cursor:pointer;" style-hover="background:#12345F">
+          <div style="font:500 14px/1.3 Barlow; color:#C6D5E6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Créditos que me faltan para grado</div>
+          <div style="font:400 12px Barlow; color:#5F82AC; padding-top:3px;">General · 5 días</div>
+        </div>
+      </div>
+
+      <div style="padding:14px 18px; border-top:1px solid #1B375C; display:flex; align-items:center; gap:11px; flex:0 0 auto;">
+        <div style="width:34px; height:34px; border-radius:17px; background:#1D5B96; color:#FFFFFF; font:600 13px/34px Barlow; text-align:center;">AM</div>
+        <div style="min-width:0;">
+          <div style="font:600 13px Barlow; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Ana Sofía Marín</div>
+          <div style="font:400 12px Barlow; color:#5F82AC;">Ing. Software · sem 5</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- main -->
+    <div style="display:flex; flex-direction:column; background:#F7F8FA; min-width:0; min-height:0;">
+      <div style="height:66px; flex:0 0 auto; background:#FFFFFF; border-bottom:1px solid #E2E5EA; display:flex; align-items:center; justify-content:space-between; padding:0 24px; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:34px; height:34px; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 13px/34px Barlow; text-align:center; flex:0 0 auto;">GC</div>
+          <div style="min-width:0;">
+            <div style="font:600 15px/1.2 Barlow; color:#0B2140;">Asistente General de Carrera</div>
+            <div style="font:400 12.5px/1.3 Barlow; color:#6B7684;">Ingeniería en Software · malla 2024 · llama3.2:3b</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font:500 12px Barlow; color:#9AA3AE;">Estado demo</span>
+          <select value="{{ chatState }}" onChange="{{ setChatState }}" style="height:34px; border:1px solid #D3D9E0; border-radius:7px; background:#FFFFFF; padding:0 10px; font:500 13px Barlow; color:#0B2140; outline:none; cursor:pointer;">
+            <option value="ok">Respuesta con herramientas</option>
+            <option value="empty">Conversación nueva (vacío)</option>
+            <option value="loading">Cargando modelo</option>
+            <option value="thinking">Pensando / usando herramienta</option>
+            <option value="queued">En cola</option>
+            <option value="offline">Modelo no disponible</option>
+            <option value="nodata">Sin datos</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- thread -->
+      <div style="flex:1; overflow:auto; padding:28px 0;">
+        <div style="max-width:800px; margin:0 auto; padding:0 24px; display:flex; flex-direction:column; gap:22px;">
+
+          <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:60px 0 0; display:flex; flex-direction:column; gap:26px; align-items:center; text-align:center;">
+              <div style="width:56px; height:56px; border-radius:14px; background:#0B2140; color:#FFFFFF; font:600 18px/56px Barlow;">GC</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <h2 style="margin:0; font:700 26px/1.15 Barlow; color:#0B2140;">Hola, Ana Sofía.</h2>
+                <p style="margin:0; font:400 16px/1.55 Barlow; color:#6B7684; max-width:460px;">Puedo consultar tu malla, tus prerrequisitos y los créditos de tu carrera. Prueba con una de estas:</p>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; text-align:left;">
+                <button style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:10px; padding:16px 18px; font:500 14.5px/1.4 Barlow; color:#0B2140; cursor:pointer;" style-hover="border-color:#1D5B96; background:#F2F6FA">¿Qué prerrequisitos me faltan para ver Base de Datos 2?</button>
+                <button style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:10px; padding:16px 18px; font:500 14.5px/1.4 Barlow; color:#0B2140; cursor:pointer;" style-hover="border-color:#1D5B96; background:#F2F6FA">¿Cuántos créditos llevo aprobados de la carrera?</button>
+                <button style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:10px; padding:16px 18px; font:500 14.5px/1.4 Barlow; color:#0B2140; cursor:pointer;" style-hover="border-color:#1D5B96; background:#F2F6FA">¿Qué materias puedo matricular en semestre 6?</button>
+                <button style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:10px; padding:16px 18px; font:500 14.5px/1.4 Barlow; color:#0B2140; cursor:pointer;" style-hover="border-color:#1D5B96; background:#F2F6FA">¿Qué materias comparte mi carrera con Ing. Electrónica?</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showThread }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:22px;">
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:78%; background:#0B2140; color:#FFFFFF; border-radius:14px 14px 4px 14px; padding:13px 17px; font:400 15.5px/1.55 Barlow;">¿Puedo matricular Base de Datos 2 el otro semestre?</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:32px; height:32px; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 12px/32px Barlow; text-align:center; flex:0 0 auto;">GC</div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:12px;">
+
+                  <!-- tool card 1 -->
+                  <div style="border:1px solid #CBDCEA; background:#F3F8FC; border-radius:10px; overflow:hidden;">
+                    <div onClick="{{ toggleTool1 }}" style="display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;">
+                      <span style="font-size:13px; color:#1D5B96;">⚙</span>
+                      <span style="font:500 13.5px IBM Plex Mono, monospace; color:#0F3E68; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Consultando prerrequisitos de “Base de Datos 2”</span>
+                      <span style="font:400 12px Barlow; color:#4C7CA8; background:#E3EEF7; border-radius:20px; padding:2px 9px;">0.42 s</span>
+                      <span style="font:500 12.5px Barlow; color:#1D5B96;">{{ tool1Label }}</span>
+                    </div>
+                    <sc-if value="{{ tool1Open }}" hint-placeholder-val="{{ false }}">
+                      <div style="border-top:1px solid #DCE8F2; background:#FFFFFF; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Herramienta</div>
+                          <div style="font:500 13px IBM Plex Mono, monospace; color:#0B2140;">obtener_prerrequisitos</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Argumentos</div>
+                          <pre style="margin:0; background:#0B2140; color:#C6D5E6; border-radius:7px; padding:12px 14px; font:400 12.5px/1.6 IBM Plex Mono, monospace; overflow:auto;">{
+  "carrera_id": 1,
+  "materia": "Base de Datos 2",
+  "estudiante_id": 4412
+}</pre>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Resultado</div>
+                          <pre style="margin:0; background:#F5F7F9; border:1px solid #E2E5EA; color:#233240; border-radius:7px; padding:12px 14px; font:400 12.5px/1.6 IBM Plex Mono, monospace; overflow:auto;">{
+  "prerrequisitos": [
+    { "materia": "Base de Datos 1", "estado": "aprobada", "nota": 4.1 },
+    { "materia": "Estructuras de Datos", "estado": "aprobada", "nota": 3.6 }
+  ],
+  "habilitado": true
+}</pre>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <!-- tool card 2 -->
+                  <div style="border:1px solid #CBDCEA; background:#F3F8FC; border-radius:10px; overflow:hidden;">
+                    <div onClick="{{ toggleTool2 }}" style="display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;">
+                      <span style="font-size:13px; color:#1D5B96;">⚙</span>
+                      <span style="font:500 13.5px IBM Plex Mono, monospace; color:#0F3E68; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Verificando oferta del semestre 6 · Ing. Software</span>
+                      <span style="font:400 12px Barlow; color:#4C7CA8; background:#E3EEF7; border-radius:20px; padding:2px 9px;">0.18 s</span>
+                      <span style="font:500 12.5px Barlow; color:#1D5B96;">{{ tool2Label }}</span>
+                    </div>
+                    <sc-if value="{{ tool2Open }}" hint-placeholder-val="{{ false }}">
+                      <div style="border-top:1px solid #DCE8F2; background:#FFFFFF; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Herramienta</div>
+                          <div style="font:500 13px IBM Plex Mono, monospace; color:#0B2140;">listar_materias_semestre</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Argumentos</div>
+                          <pre style="margin:0; background:#0B2140; color:#C6D5E6; border-radius:7px; padding:12px 14px; font:400 12.5px/1.6 IBM Plex Mono, monospace; overflow:auto;">{ "carrera_id": 1, "semestre": 6 }</pre>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                          <div style="font:600 10.5px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Resultado</div>
+                          <pre style="margin:0; background:#F5F7F9; border:1px solid #E2E5EA; color:#233240; border-radius:7px; padding:12px 14px; font:400 12.5px/1.6 IBM Plex Mono, monospace; overflow:auto;">[
+  { "codigo": "SW-604", "nombre": "Base de Datos 2", "creditos": 3 },
+  { "codigo": "SW-611", "nombre": "Arquitectura de Software", "creditos": 4 },
+  { "codigo": "SW-620", "nombre": "Redes", "creditos": 3 }
+]</pre>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:14px 14px 14px 4px; padding:16px 18px; font:400 15.5px/1.65 Barlow; color:#233240; display:flex; flex-direction:column; gap:12px;">
+                    <p style="margin:0;">Sí. Tienes aprobados los dos prerrequisitos de <strong style="font-weight:600;">Base de Datos 2</strong>: Base de Datos 1 (4.1) y Estructuras de Datos (3.6).</p>
+                    <p style="margin:0;">La materia está ofertada en semestre 6 de tu malla con 3 créditos. Junto a ella podrías matricular Arquitectura de Software (4 créditos) y Redes (3 créditos).</p>
+                  </div>
+
+                  <div style="display:flex; align-items:center; gap:8px; padding-left:2px;">
+                    <button style="width:32px; height:32px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; cursor:pointer; font-size:14px; line-height:1;" style-hover="border-color:#1D5B96; background:#F2F6FA">👍</button>
+                    <button style="width:32px; height:32px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; cursor:pointer; font-size:14px; line-height:1;" style-hover="border-color:#C2603F; background:#FBF3F0">👎</button>
+                    <button style="height:32px; padding:0 12px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; cursor:pointer; font:500 12.5px Barlow; color:#6B7684;" style-hover="border-color:#1D5B96; color:#0B2140">Copiar</button>
+                    <span style="font:400 12.5px Barlow; color:#9AA3AE; padding-left:4px;">2 herramientas · 3.4 s · 2 fuentes de la base de datos</span>
+                  </div>
+
+                  <div style="border:1px solid #D3D9E0; background:#FFFFFF; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                    <div style="font:600 13px Barlow; color:#0B2140;">¿Qué le faltó a esta respuesta? <span style="font-weight:400; color:#9AA3AE;">(opcional)</span></div>
+                    <textarea placeholder="Ej.: no mencionó que Redes choca en horario" style="min-height:64px; resize:vertical; border:1px solid #D3D9E0; border-radius:8px; padding:10px 12px; font:400 14px/1.5 Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)"></textarea>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                      <button style="height:34px; padding:0 14px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:7px; font:500 13px Barlow; color:#6B7684; cursor:pointer;">Omitir</button>
+                      <button style="height:34px; padding:0 16px; border:none; background:#0B2140; color:#FFFFFF; border-radius:7px; font:600 13px Barlow; cursor:pointer;">Enviar comentario</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showNoData }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:22px;">
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:78%; background:#0B2140; color:#FFFFFF; border-radius:14px 14px 4px 14px; padding:13px 17px; font:400 15.5px/1.55 Barlow;">¿Cuál es el horario de Redes con el profesor Ruiz?</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:32px; height:32px; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 12px/32px Barlow; text-align:center; flex:0 0 auto;">GC</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+                <div style="border:1px solid #CBDCEA; background:#F3F8FC; border-radius:10px; padding:11px 14px; display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:13px; color:#1D5B96;">⚙</span>
+                  <span style="font:500 13.5px IBM Plex Mono, monospace; color:#0F3E68; flex:1;">buscar_horarios · sin resultados</span>
+                  <span style="font:500 12px Barlow; color:#7D6A2E; background:#F6EFD8; border-radius:20px; padding:2px 9px;">0 filas</span>
+                </div>
+                <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:14px 14px 14px 4px; padding:16px 18px; font:400 15.5px/1.65 Barlow; color:#233240; display:flex; flex-direction:column; gap:10px;">
+                  <p style="margin:0;">No tengo esa información. La base de datos académica no incluye horarios ni asignación de docentes; solo malla, materias, créditos y prerrequisitos.</p>
+                  <p style="margin:0; color:#6B7684; font-size:14.5px;">Puedes consultarlo en Registro Académico. Si quieres, te digo qué prerrequisitos exige Redes.</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button style="width:32px; height:32px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; cursor:pointer; font-size:14px;" style-hover="border-color:#1D5B96">👍</button>
+                  <button style="width:32px; height:32px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; cursor:pointer; font-size:14px;" style-hover="border-color:#C2603F">👎</button>
+                  <span style="font:400 12.5px Barlow; color:#9AA3AE; padding-left:4px;">Responder “no sé” con la herramienta consultada es una respuesta válida.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <!-- status + composer -->
+      <div style="flex:0 0 auto; background:#FFFFFF; border-top:1px solid #E2E5EA; padding:16px 24px 20px;">
+        <div style="max-width:800px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+
+          <sc-if value="{{ isLoadingModel }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:12px; background:#F3F8FC; border:1px solid #CBDCEA; border-radius:9px; padding:12px 14px;">
+              <div style="width:16px; height:16px; border:2px solid #CBDCEA; border-top-color:#1D5B96; border-radius:9px; animation:pb-spin .8s linear infinite; flex:0 0 auto;"></div>
+              <div style="flex:1;">
+                <div style="font:600 13.5px Barlow; color:#0B2140;">Cargando el modelo en memoria</div>
+                <div style="font:400 13px Barlow; color:#4C7CA8;">Primera consulta tras un rato de inactividad. Suele tardar entre 10 y 30 segundos.</div>
+              </div>
+              <div style="width:120px; height:5px; background:#DCE8F2; border-radius:3px; overflow:hidden;"><div style="width:45%; height:100%; background:#1D5B96;"></div></div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isThinking }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:12px; background:#F3F8FC; border:1px solid #CBDCEA; border-radius:9px; padding:12px 14px;">
+              <span style="font-size:14px; color:#1D5B96; animation:pb-pulse 1.2s ease-in-out infinite;">⚙</span>
+              <div style="flex:1;">
+                <div style="font:600 13.5px Barlow; color:#0B2140;">Usando herramienta · <span style="font:500 13px IBM Plex Mono, monospace;">obtener_prerrequisitos</span></div>
+                <div style="font:400 13px Barlow; color:#4C7CA8;">Puede pasar varios segundos sin texto nuevo mientras consulta la base de datos.</div>
+              </div>
+              <button style="height:34px; padding:0 14px; border:1px solid #C2603F; background:#FFFFFF; color:#A9502F; border-radius:7px; font:600 13px Barlow; cursor:pointer;" style-hover="background:#FBF3F0">Detener</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isQueued }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:12px; background:#FBF7EA; border:1px solid #E7DCB8; border-radius:9px; padding:12px 14px;">
+              <span style="width:22px; height:22px; border-radius:11px; background:#B79322; color:#FFFFFF; font:600 12px/22px Barlow; text-align:center;">2</span>
+              <div style="flex:1;">
+                <div style="font:600 13.5px Barlow; color:#5E4E12;">En cola · segundo lugar</div>
+                <div style="font:400 13px Barlow; color:#7D6A2E;">La GPU está atendiendo otra consulta. Tu turno empieza en aproximadamente 20 segundos.</div>
+              </div>
+              <button style="height:34px; padding:0 14px; border:1px solid #D9C88E; background:#FFFFFF; color:#5E4E12; border-radius:7px; font:600 13px Barlow; cursor:pointer;">Cancelar</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isOffline }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:flex-start; gap:12px; background:#FBF3F0; border:1px solid #E6C6B9; border-radius:9px; padding:14px;">
+              <span style="width:22px; height:22px; border-radius:11px; background:#A9502F; color:#FFFFFF; font:600 13px/22px Barlow; text-align:center; flex:0 0 auto;">!</span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                <div style="font:600 13.5px Barlow; color:#7A3A21;">El asistente no está disponible en este momento</div>
+                <div style="font:400 13px/1.5 Barlow; color:#8B5137;">El servicio de inferencia (Ollama) no responde en el servidor de la facultad. Tus conversaciones anteriores siguen disponibles para lectura.</div>
+                <div style="display:flex; gap:8px; padding-top:2px;">
+                  <button style="height:34px; padding:0 14px; border:none; background:#A9502F; color:#FFFFFF; border-radius:7px; font:600 13px Barlow; cursor:pointer;">Reintentar</button>
+                  <button style="height:34px; padding:0 14px; border:1px solid #E6C6B9; background:#FFFFFF; color:#7A3A21; border-radius:7px; font:600 13px Barlow; cursor:pointer;">Avisar a coordinación</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="border:1px solid #D3D9E0; border-radius:12px; background:#FFFFFF; padding:12px 14px; display:flex; align-items:flex-end; gap:12px;">
+            <textarea placeholder="{{ composerPlaceholder }}" style="flex:1; min-height:26px; max-height:120px; resize:none; border:none; outline:none; font:400 15.5px/1.5 Barlow; color:#0B2140; background:transparent;"></textarea>
+            <sc-if value="{{ isBusy }}" hint-placeholder-val="{{ false }}">
+              <button style="width:40px; height:40px; border:none; border-radius:9px; background:#A9502F; color:#FFFFFF; font:600 13px Barlow; cursor:pointer; flex:0 0 auto;">■</button>
+            </sc-if>
+            <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+              <button style="width:40px; height:40px; border:none; border-radius:9px; background:{{ sendBg }}; color:#FFFFFF; font-size:15px; cursor:pointer; flex:0 0 auto;">↑</button>
+            </sc-if>
+          </div>
+          <div style="font:400 12px Barlow; color:#9AA3AE; text-align:center;">El asistente responde con datos de la malla registrada por coordinación. Verifica siempre con Registro Académico antes de matricular.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { chat: "ok", t1: true, t2: false };
+  renderVals() {
+    const c = this.state.chat;
+    const busy = c === "loading" || c === "thinking" || c === "queued";
+    return {
+  goLogin: () => { location.href = './1 Login.dc.html'; },
+  goRegistro: () => { location.href = './2 Registro.dc.html'; },
+  goChat: () => { location.href = './3 Chat.dc.html'; },
+  goCarreras: () => { location.href = './4 Carreras.dc.html'; },
+  goMaterias: () => { location.href = './5 Materias.dc.html'; },
+  goMalla: () => { location.href = './6 Malla.dc.html'; },
+      chatState: c,
+      setChatState: (e) => this.setState({ chat: e.target.value }),
+      showEmpty: c === "empty",
+      showThread: c === "ok" || busy || c === "offline",
+      showNoData: c === "nodata",
+      isLoadingModel: c === "loading", isThinking: c === "thinking", isQueued: c === "queued", isOffline: c === "offline",
+      isBusy: busy, isIdle: !busy,
+      sendBg: c === "offline" ? "#C2CAD4" : "#0B2140",
+      composerPlaceholder: busy ? "Espera a que termine la respuesta actual…"
+        : c === "offline" ? "El asistente no está disponible"
+        : "Escribe tu pregunta sobre la carrera…",
+      tool1Open: this.state.t1, tool2Open: this.state.t2,
+      tool1Label: this.state.t1 ? "ocultar detalle ▴" : "ver detalle ▾",
+      tool2Label: this.state.t2 ? "ocultar detalle ▴" : "ver detalle ▾",
+      toggleTool1: () => this.setState(p => ({ t1: !p.t1 })),
+      toggleTool2: () => this.setState(p => ({ t2: !p.t2 }))
+    };
+  }
+}
+</script>
+</body>
+</html>

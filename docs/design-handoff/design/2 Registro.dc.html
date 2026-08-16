@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin:0; background:#EDEFF2; font-family:Barlow, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#1D5B96; text-decoration:none; }
+  a:hover { color:#0B2140; }
+  * { box-sizing:border-box; }
+  ::placeholder { color:#9AA3AE; }
+  @keyframes pb-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes pb-spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 20px 60px; min-height:100vh;">
+  <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#FFFFFF; border:1px solid #DDE1E7; border-radius:10px; box-shadow:0 6px 18px rgba(11,33,64,.08);">
+    <span style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE; padding:0 10px 0 6px;">Pantallas</span>
+      <a href="./1 Login.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">1 · Login</a>
+      <a href="./2 Registro.dc.html" style="background:#0B2140; color:#FFFFFF; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">2 · Registro</a>
+      <a href="./3 Chat.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">3 · Chat</a>
+      <a href="./4 Carreras.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">4 · Carreras</a>
+      <a href="./5 Materias.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">5 · Materias</a>
+      <a href="./6 Malla.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">6 · Malla</a>
+  </div>
+
+  <div data-screen-label="02 Registro estudiante" style="width:1440px; height:900px; background:#F7F8FA; border:1px solid #DDE1E7; border-radius:14px; overflow:hidden; display:flex; flex-direction:column;">
+    <div style="height:68px; background:#FFFFFF; border-bottom:1px solid #E2E5EA; display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex:0 0 auto;">
+      <img src="uploads/PacualBravoLogo.jpg" alt="Pascual Bravo" style="height:30px;" />
+      <div style="font:400 14px Barlow; color:#6B7684;">¿Ya tienes cuenta? <a href="#" onClick="{{ goLogin }}" style="font-weight:600;">Iniciar sesión</a></div>
+    </div>
+
+    <div style="flex:1; overflow:auto; display:flex; justify-content:center; padding:44px 32px;">
+      <div style="width:720px; display:flex; flex-direction:column; gap:28px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h1 style="margin:0; font:700 32px/1.1 Barlow; color:#0B2140;">Crear cuenta de estudiante</h1>
+          <p style="margin:0; font:400 16px/1.55 Barlow; color:#6B7684; text-wrap:pretty;">Tu carrera y tu semestre definen a qué materias y a qué asistentes tendrás acceso.</p>
+        </div>
+
+        <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:12px; padding:28px; display:flex; flex-direction:column; gap:20px;">
+          <div style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE;">Datos personales</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Nombres
+              <input value="Ana Sofía" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Apellidos
+              <input value="Marín Osorio" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Documento
+              <input value="1 036 224 118" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Correo institucional
+              <input value="ana.marin@pascualbravo.edu.co" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Contraseña
+              <input type="password" value="............" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Confirmar contraseña
+              <input type="password" value="............" style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 14px; font:400 15px Barlow; color:#0B2140; outline:none;" style-focus="border-color:#1D5B96; box-shadow:0 0 0 3px rgba(29,91,150,.14)" />
+            </label>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF; border:1px solid #C7D6E6; border-radius:12px; padding:28px; display:flex; flex-direction:column; gap:20px; box-shadow:0 1px 0 #1D5B96 inset, 0 0 0 3px rgba(29,91,150,.05);">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px;">
+            <div style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#1D5B96;">Contexto académico</div>
+            <div style="font:400 13px Barlow; color:#6B7684;">Define las materias que verá tu asistente</div>
+          </div>
+
+          <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Carrera
+            <select style="height:44px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; background:#FFFFFF; outline:none;">
+              <option>Ingeniería en Software</option>
+              <option>Ingeniería Electrónica</option>
+              <option>Ingeniería Mecánica</option>
+              <option>Tecnología en Producción Industrial</option>
+            </select>
+          </label>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font:600 13px Barlow; color:#3B4757;">Semestre actual</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">1</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">2</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">3</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">4</button>
+              <button style="width:52px; height:44px; border:1px solid #0B2140; background:#0B2140; border-radius:8px; font:600 15px Barlow; color:#FFFFFF; cursor:pointer;">5</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">6</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">7</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">8</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">9</button>
+              <button style="width:52px; height:44px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:500 15px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">10</button>
+            </div>
+          </div>
+
+          <div style="background:#F2F6FA; border-radius:8px; padding:14px 16px; display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:22px; height:22px; border-radius:11px; background:#1D5B96; color:#FFFFFF; font:600 13px/22px Barlow; text-align:center; flex:0 0 auto;">i</div>
+            <p style="margin:0; font:400 14px/1.5 Barlow; color:#3B4757; text-wrap:pretty;">Con <strong style="font-weight:600;">Ingeniería en Software · semestre 5</strong> tendrás asistentes para Base de Datos 2, Ingeniería de Software 1, Sistemas Operativos y Estadística, además del asistente general de carrera.</p>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:20px;">
+          <label style="display:flex; align-items:center; gap:9px; font:400 14px Barlow; color:#6B7684; cursor:pointer; max-width:420px;"><input type="checkbox" style="width:15px; height:15px; accent-color:#1D5B96; flex:0 0 auto;" />Acepto el tratamiento de datos y que mis conversaciones se usen para evaluar el asistente.</label>
+          <button style="height:48px; padding:0 30px; border:none; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 15px Barlow; cursor:pointer;" style-hover="background:#12345F">Crear cuenta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {
+  goLogin: () => { location.href = './1 Login.dc.html'; },
+  goRegistro: () => { location.href = './2 Registro.dc.html'; },
+  goChat: () => { location.href = './3 Chat.dc.html'; },
+  goCarreras: () => { location.href = './4 Carreras.dc.html'; },
+  goMaterias: () => { location.href = './5 Materias.dc.html'; },
+  goMalla: () => { location.href = './6 Malla.dc.html'; },
+    }; }
+}
+</script>
+</body>
+</html>

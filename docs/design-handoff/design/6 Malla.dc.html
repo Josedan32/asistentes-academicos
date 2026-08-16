@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin:0; background:#EDEFF2; font-family:Barlow, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#1D5B96; text-decoration:none; }
+  a:hover { color:#0B2140; }
+  * { box-sizing:border-box; }
+  ::placeholder { color:#9AA3AE; }
+  @keyframes pb-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes pb-spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 20px 60px; min-height:100vh;">
+  <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#FFFFFF; border:1px solid #DDE1E7; border-radius:10px; box-shadow:0 6px 18px rgba(11,33,64,.08);">
+    <span style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE; padding:0 10px 0 6px;">Pantallas</span>
+      <a href="./1 Login.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">1 · Login</a>
+      <a href="./2 Registro.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">2 · Registro</a>
+      <a href="./3 Chat.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">3 · Chat</a>
+      <a href="./4 Carreras.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">4 · Carreras</a>
+      <a href="./5 Materias.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">5 · Materias</a>
+      <a href="./6 Malla.dc.html" style="background:#0B2140; color:#FFFFFF; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">6 · Malla</a>
+  </div>
+
+  <div data-screen-label="06 Malla curricular" style="width:1440px; height:900px; background:#F7F8FA; border:1px solid #DDE1E7; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:236px 1fr; position:relative;">
+    <div style="background:#0B2140; padding:20px 16px; display:flex; flex-direction:column; gap:22px;">
+      <div style="background:#FFFFFF; border-radius:6px; padding:9px 12px;"><img src="uploads/PacualBravoLogo.jpg" alt="Pascual Bravo" style="height:24px; display:block;" /></div>
+      <div style="font:600 11px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#5F82AC;">Coordinación</div>
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <div onClick="{{ goCarreras }}" style="padding:10px 12px; border-radius:7px; color:#C6D5E6; font:400 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Carreras</div>
+        <div onClick="{{ goMaterias }}" style="padding:10px 12px; border-radius:7px; color:#C6D5E6; font:400 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Materias</div>
+        <div style="padding:10px 12px; border-radius:7px; background:#1D5B96; color:#FFFFFF; font:600 14px Barlow; cursor:pointer;">Malla curricular</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+      <div style="flex:0 0 auto; background:#FFFFFF; border-bottom:1px solid #E2E5EA; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div>
+            <div style="font:600 11px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE; padding-bottom:4px;">Malla de</div>
+            <select style="height:42px; min-width:280px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:600 16px Barlow; color:#0B2140; background:#FFFFFF; outline:none; cursor:pointer;">
+              <option>Ingeniería en Software</option>
+              <option>Ingeniería Electrónica</option>
+              <option>Ingeniería Mecánica</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:22px; padding-left:8px;">
+            <div><div style="font:700 22px/1.1 Barlow; color:#0B2140;">52</div><div style="font:400 12.5px Barlow; color:#6B7684;">materias</div></div>
+            <div><div style="font:700 22px/1.1 Barlow; color:#0B2140;">168</div><div style="font:400 12.5px Barlow; color:#6B7684;">créditos</div></div>
+            <div><div style="font:700 22px/1.1 Barlow; color:#0B2140;">10</div><div style="font:400 12.5px Barlow; color:#6B7684;">semestres</div></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:9px;">
+          <button style="height:40px; padding:0 16px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:600 14px Barlow; color:#3B4757; cursor:pointer;" style-hover="border-color:#1D5B96">Ver prerrequisitos</button>
+          <button onClick="{{ openPanel }}" style="height:40px; padding:0 18px; border:none; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Asignar materia</button>
+        </div>
+      </div>
+
+      <div style="flex:1; overflow:auto; padding:22px 28px;">
+        <div style="display:flex; gap:14px; align-items:flex-start; min-width:max-content;">
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 1</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">17 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Cálculo Diferencial</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">MAT-101</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Álgebra Lineal</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">MAT-110</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Fundamentos de Programación</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRG-101</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Constitución y Democracia</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">HUM-100</span><span style="font:500 12px Barlow; color:#6B7684;">2 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 2</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">16 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Cálculo Integral</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">MAT-102</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div><div style="font:400 11.5px Barlow; color:#4C7CA8; padding-top:6px; border-top:1px solid #EEF1F4; margin-top:8px;">Req: Cálculo Diferencial</div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Programación Orientada a Objetos</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRG-150</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div><div style="font:400 11.5px Barlow; color:#4C7CA8; padding-top:6px; border-top:1px solid #EEF1F4; margin-top:8px;">Req: Fundamentos de Programación</div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Física Mecánica</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">FIS-101</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 3</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">15 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Estructuras de Datos</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRG-201</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div><div style="font:400 11.5px Barlow; color:#4C7CA8; padding-top:6px; border-top:1px solid #EEF1F4; margin-top:8px;">Req: POO</div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Estadística</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">EST-210</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div><div style="display:flex; align-items:center; gap:5px; padding-top:8px; margin-top:8px; border-top:1px solid #EEF1F4;"><span style="width:6px; height:6px; border-radius:3px; background:#B79322;"></span><span style="font:400 11.5px Barlow; color:#7D6A2E;">Compartida · 4 carreras</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Bases Matemáticas Discretas</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">MAT-220</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 4</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">13 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Base de Datos 1</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">BDD-301</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div><div style="font:400 11.5px Barlow; color:#4C7CA8; padding-top:6px; border-top:1px solid #EEF1F4; margin-top:8px;">Req: Estructuras de Datos</div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Algoritmia</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRG-240</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 5</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">13 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Ingeniería de Software 1</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">ISW-401</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Sistemas Operativos</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">SIS-410</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#1D5B96;">Semestre 6</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">6 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px; background:#EAF2F9; border:1px dashed #1D5B96; border-radius:11px; padding:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px;"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Redes</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">RED-501</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px;"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Base de Datos 2</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">BDD-302</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div><div style="font:400 11.5px Barlow; color:#4C7CA8; padding-top:6px; border-top:1px solid #EEF1F4; margin-top:8px;">Req: Base de Datos 1, Estructuras de Datos</div></div>
+              <div style="height:38px; border:1px dashed #1D5B96; background:#FFFFFF; border-radius:9px; font:500 13px/38px Barlow; color:#1D5B96; text-align:center;">Soltar aquí</div>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 7</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">7 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Ingeniería de Software 2</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">ISW-402</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Seguridad Informática</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">SEG-610</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 8</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">4 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Inteligencia Artificial</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">IA-701</span><span style="font:500 12px Barlow; color:#6B7684;">4 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 9</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">3 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Proyecto de Grado 1</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRO-901</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+          <div style="width:224px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;"><div style="font:700 15px Barlow; color:#0B2140;">Semestre 10</div><div style="font:400 12.5px Barlow; color:#9AA3AE;">6 cr</div></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Proyecto de Grado 2</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRO-902</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:9px; padding:11px 12px; cursor:grab;" style-hover="border-color:#1D5B96; box-shadow:0 3px 10px rgba(11,33,64,.08)"><div style="font:600 14px/1.3 Barlow; color:#0B2140;">Práctica Profesional</div><div style="display:flex; justify-content:space-between; padding-top:5px;"><span style="font:400 12px IBM Plex Mono, monospace; color:#9AA3AE;">PRA-910</span><span style="font:500 12px Barlow; color:#6B7684;">3 cr</span></div></div>
+              <button style="height:38px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">+ Materia</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- panel asignar materia -->
+    <sc-if value="{{ panelOpen }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; top:0; right:0; bottom:0; width:432px; background:#FFFFFF; border-left:1px solid #DDE1E7; box-shadow:-18px 0 40px rgba(11,33,64,.10); display:flex; flex-direction:column;">
+        <div style="padding:20px 22px 16px; border-bottom:1px solid #E2E5EA; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+          <div>
+            <h2 style="margin:0; font:700 19px/1.2 Barlow; color:#0B2140;">Asignar materia</h2>
+            <div style="font:400 13.5px Barlow; color:#6B7684; padding-top:3px;">Ing. Software · semestre 6</div>
+          </div>
+          <button onClick="{{ closePanel }}" style="width:30px; height:30px; border:1px solid #E2E5EA; background:#FFFFFF; border-radius:7px; font-size:14px; color:#6B7684; cursor:pointer;">✕</button>
+        </div>
+
+        <div style="flex:1; overflow:auto; padding:18px 22px; display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <div style="font:600 12px Barlow; letter-spacing:.1em; text-transform:uppercase; color:#9AA3AE;">Buscar en el catálogo global</div>
+            <input value="base de datos" style="height:42px; border:1px solid #1D5B96; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; outline:none; box-shadow:0 0 0 3px rgba(29,91,150,.12);" />
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="border:2px solid #1D5B96; border-radius:10px; padding:13px 14px; background:#F5F9FD; display:flex; flex-direction:column; gap:9px;">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                <div>
+                  <div style="font:600 15px/1.25 Barlow; color:#0B2140;">Base de Datos 2</div>
+                  <div style="font:400 12.5px IBM Plex Mono, monospace; color:#6B7684; padding-top:3px;">BDD-302 · 3 créditos</div>
+                </div>
+                <span style="background:#1D5B96; color:#FFFFFF; font:600 11.5px Barlow; border-radius:20px; padding:3px 10px; white-space:nowrap;">Ya existe</span>
+              </div>
+              <div style="background:#FBF7EA; border:1px solid #E7DCB8; border-radius:8px; padding:10px 12px; display:flex; gap:9px; align-items:flex-start;">
+                <span style="width:18px; height:18px; border-radius:9px; background:#B79322; color:#FFFFFF; font:600 11px/18px Barlow; text-align:center; flex:0 0 auto;">!</span>
+                <div style="font:400 13px/1.5 Barlow; color:#5E4E12;">También está en <strong style="font-weight:600;">Ing. Electrónica, semestre 5</strong>. Úsala tal cual para que el material y el asistente se compartan entre carreras; no crees un duplicado.</div>
+              </div>
+            </div>
+
+            <div style="border:1px solid #E2E5EA; border-radius:10px; padding:13px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;" style-hover="border-color:#1D5B96">
+              <div>
+                <div style="font:600 15px/1.25 Barlow; color:#0B2140;">Base de Datos 1</div>
+                <div style="font:400 12.5px IBM Plex Mono, monospace; color:#6B7684; padding-top:3px;">BDD-301 · 3 créditos</div>
+              </div>
+              <span style="font:400 12.5px Barlow; color:#9AA3AE;">Ya en semestre 4</span>
+            </div>
+
+            <div style="border:1px solid #E2E5EA; border-radius:10px; padding:13px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;" style-hover="border-color:#1D5B96">
+              <div>
+                <div style="font:600 15px/1.25 Barlow; color:#0B2140;">Bases de Datos NoSQL</div>
+                <div style="font:400 12.5px IBM Plex Mono, monospace; color:#6B7684; padding-top:3px;">BDD-410 · 3 créditos</div>
+              </div>
+              <span style="font:400 12.5px Barlow; color:#9AA3AE;">Sin asignar</span>
+            </div>
+
+            <button style="height:40px; border:1px dashed #C2CAD4; background:transparent; border-radius:9px; font:500 13.5px Barlow; color:#6B7684; cursor:pointer;" style-hover="border-color:#1D5B96; color:#1D5B96">Ninguna coincide · crear materia nueva</button>
+          </div>
+
+          <div style="height:1px; background:#E2E5EA;"></div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Semestre en esta malla
+              <select style="height:42px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; background:#FFFFFF;"><option>Semestre 6</option><option>Semestre 7</option><option>Semestre 8</option></select>
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Créditos en esta carrera
+              <input value="3" style="height:42px; width:120px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; outline:none;" />
+            </label>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;">
+              <div style="font:600 13px Barlow; color:#3B4757;">Prerrequisitos</div>
+              <div style="font:400 12.5px Barlow; color:#9AA3AE;">Solo materias de semestres 1 a 5</div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:7px;">
+              <span style="background:#0B2140; color:#FFFFFF; font:500 13px Barlow; border-radius:20px; padding:5px 11px; display:flex; align-items:center; gap:7px;">Base de Datos 1 <span style="opacity:.6; cursor:pointer;">✕</span></span>
+              <span style="background:#0B2140; color:#FFFFFF; font:500 13px Barlow; border-radius:20px; padding:5px 11px; display:flex; align-items:center; gap:7px;">Estructuras de Datos <span style="opacity:.6; cursor:pointer;">✕</span></span>
+            </div>
+            <div style="border:1px solid #E2E5EA; border-radius:9px; max-height:172px; overflow:auto;">
+              <div style="padding:9px 12px; font:600 11px Barlow; letter-spacing:.1em; text-transform:uppercase; color:#9AA3AE; background:#F5F7F9; border-bottom:1px solid #E2E5EA;">Semestre 4</div>
+              <label style="display:flex; align-items:center; gap:9px; padding:9px 12px; font:400 14px Barlow; color:#233240; cursor:pointer;" style-hover="background:#F5F9FD"><input type="checkbox" checked="{{ true }}" style="accent-color:#1D5B96;" />Base de Datos 1</label>
+              <label style="display:flex; align-items:center; gap:9px; padding:9px 12px; font:400 14px Barlow; color:#233240; cursor:pointer;" style-hover="background:#F5F9FD"><input type="checkbox" style="accent-color:#1D5B96;" />Algoritmia</label>
+              <div style="padding:9px 12px; font:600 11px Barlow; letter-spacing:.1em; text-transform:uppercase; color:#9AA3AE; background:#F5F7F9; border-top:1px solid #E2E5EA; border-bottom:1px solid #E2E5EA;">Semestre 3</div>
+              <label style="display:flex; align-items:center; gap:9px; padding:9px 12px; font:400 14px Barlow; color:#233240; cursor:pointer;" style-hover="background:#F5F9FD"><input type="checkbox" checked="{{ true }}" style="accent-color:#1D5B96;" />Estructuras de Datos</label>
+              <label style="display:flex; align-items:center; gap:9px; padding:9px 12px; font:400 14px Barlow; color:#233240; cursor:pointer;" style-hover="background:#F5F9FD"><input type="checkbox" style="accent-color:#1D5B96;" />Estadística</label>
+              <label style="display:flex; align-items:center; gap:9px; padding:9px 12px; font:400 14px Barlow; color:#233240; cursor:pointer;" style-hover="background:#F5F9FD"><input type="checkbox" style="accent-color:#1D5B96;" />Bases Matemáticas Discretas</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:16px 22px; border-top:1px solid #E2E5EA; display:flex; gap:9px; justify-content:flex-end;">
+          <button onClick="{{ closePanel }}" style="height:42px; padding:0 16px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:600 14px Barlow; color:#3B4757; cursor:pointer;">Cancelar</button>
+          <button onClick="{{ closePanel }}" style="height:42px; padding:0 20px; border:none; background:#0B2140; color:#FFFFFF; border-radius:8px; font:600 14px Barlow; cursor:pointer;">Asignar a semestre 6</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { panel: true };
+  renderVals() { return {
+  goLogin: () => { location.href = './1 Login.dc.html'; },
+  goRegistro: () => { location.href = './2 Registro.dc.html'; },
+  goChat: () => { location.href = './3 Chat.dc.html'; },
+  goCarreras: () => { location.href = './4 Carreras.dc.html'; },
+  goMaterias: () => { location.href = './5 Materias.dc.html'; },
+  goMalla: () => { location.href = './6 Malla.dc.html'; },
+      panelOpen: this.state.panel,
+      openPanel: () => this.setState({ panel: true }),
+      closePanel: () => this.setState({ panel: false })
+    }; }
+}
+</script>
+</body>
+</html>

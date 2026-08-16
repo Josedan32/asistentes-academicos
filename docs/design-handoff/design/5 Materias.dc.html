@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin:0; background:#EDEFF2; font-family:Barlow, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#1D5B96; text-decoration:none; }
+  a:hover { color:#0B2140; }
+  * { box-sizing:border-box; }
+  ::placeholder { color:#9AA3AE; }
+  @keyframes pb-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes pb-spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 20px 60px; min-height:100vh;">
+  <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#FFFFFF; border:1px solid #DDE1E7; border-radius:10px; box-shadow:0 6px 18px rgba(11,33,64,.08);">
+    <span style="font:600 11px/1 Barlow; letter-spacing:.14em; text-transform:uppercase; color:#9AA3AE; padding:0 10px 0 6px;">Pantallas</span>
+      <a href="./1 Login.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">1 · Login</a>
+      <a href="./2 Registro.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">2 · Registro</a>
+      <a href="./3 Chat.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">3 · Chat</a>
+      <a href="./4 Carreras.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">4 · Carreras</a>
+      <a href="./5 Materias.dc.html" style="background:#0B2140; color:#FFFFFF; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">5 · Materias</a>
+      <a href="./6 Malla.dc.html" style="background:transparent; color:#3B4757; border-radius:6px; padding:8px 14px; font:600 13px Barlow; text-decoration:none;">6 · Malla</a>
+  </div>
+
+  <div data-screen-label="05 Materias" style="width:1440px; height:900px; background:#F7F8FA; border:1px solid #DDE1E7; border-radius:14px; overflow:hidden; display:grid; grid-template-columns:236px 1fr;">
+    <div style="background:#0B2140; padding:20px 16px; display:flex; flex-direction:column; gap:22px;">
+      <div style="background:#FFFFFF; border-radius:6px; padding:9px 12px;"><img src="uploads/PacualBravoLogo.jpg" alt="Pascual Bravo" style="height:24px; display:block;" /></div>
+      <div style="font:600 11px Barlow; letter-spacing:.14em; text-transform:uppercase; color:#5F82AC;">Coordinación</div>
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <div onClick="{{ goCarreras }}" style="padding:10px 12px; border-radius:7px; color:#C6D5E6; font:400 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Carreras</div>
+        <div style="padding:10px 12px; border-radius:7px; background:#1D5B96; color:#FFFFFF; font:600 14px Barlow; cursor:pointer;">Materias</div>
+        <div onClick="{{ goMalla }}" style="padding:10px 12px; border-radius:7px; color:#C6D5E6; font:400 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Malla curricular</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; overflow:hidden;">
+      <div style="height:76px; flex:0 0 auto; background:#FFFFFF; border-bottom:1px solid #E2E5EA; display:flex; align-items:center; justify-content:space-between; padding:0 28px;">
+        <div>
+          <h1 style="margin:0; font:700 22px/1.2 Barlow; color:#0B2140;">Materias</h1>
+          <div style="font:400 13.5px Barlow; color:#6B7684;">Catálogo global · una materia puede pertenecer a varias carreras</div>
+        </div>
+        <button onClick="{{ openModal }}" style="height:40px; padding:0 18px; border:none; border-radius:8px; background:#0B2140; color:#FFFFFF; font:600 14px Barlow; cursor:pointer;" style-hover="background:#12345F">Nueva materia</button>
+      </div>
+
+      <div style="flex:1; overflow:auto; padding:24px 28px;">
+        <div style="display:flex; gap:10px; padding-bottom:16px;">
+          <input placeholder="Buscar por nombre o código" style="height:38px; width:300px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 14px Barlow; color:#0B2140; background:#FFFFFF; outline:none;" />
+          <select style="height:38px; border:1px solid #D3D9E0; border-radius:8px; padding:0 10px; font:400 14px Barlow; color:#3B4757; background:#FFFFFF;"><option>Todas las áreas</option><option>Ciencias básicas</option><option>Programación</option><option>Sociohumanística</option></select>
+          <select style="height:38px; border:1px solid #D3D9E0; border-radius:8px; padding:0 10px; font:400 14px Barlow; color:#3B4757; background:#FFFFFF;"><option>Usada en cualquier carrera</option><option>Sin asignar a ninguna malla</option></select>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid #E2E5EA; border-radius:10px; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse; font:400 14.5px Barlow; color:#233240;">
+            <thead>
+              <tr style="background:#F5F7F9; text-align:left;">
+                <th style="padding:12px 18px; font:600 12px Barlow; letter-spacing:.08em; text-transform:uppercase; color:#6B7684; border-bottom:1px solid #E2E5EA;">Código</th>
+                <th style="padding:12px 18px; font:600 12px Barlow; letter-spacing:.08em; text-transform:uppercase; color:#6B7684; border-bottom:1px solid #E2E5EA;">Materia</th>
+                <th style="padding:12px 18px; font:600 12px Barlow; letter-spacing:.08em; text-transform:uppercase; color:#6B7684; border-bottom:1px solid #E2E5EA;">Área</th>
+                <th style="padding:12px 18px; font:600 12px Barlow; letter-spacing:.08em; text-transform:uppercase; color:#6B7684; border-bottom:1px solid #E2E5EA;">Créditos</th>
+                <th style="padding:12px 18px; font:600 12px Barlow; letter-spacing:.08em; text-transform:uppercase; color:#6B7684; border-bottom:1px solid #E2E5EA;">En mallas</th>
+                <th style="padding:12px 18px; border-bottom:1px solid #E2E5EA;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">MAT-101</td><td style="padding:13px 18px; font-weight:500;">Cálculo Diferencial</td><td style="padding:13px 18px; color:#6B7684;">Ciencias básicas</td><td style="padding:13px 18px;">4</td><td style="padding:13px 18px;">3 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">PRG-201</td><td style="padding:13px 18px; font-weight:500;">Estructuras de Datos</td><td style="padding:13px 18px; color:#6B7684;">Programación</td><td style="padding:13px 18px;">4</td><td style="padding:13px 18px;">2 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">BDD-301</td><td style="padding:13px 18px; font-weight:500;">Base de Datos 1</td><td style="padding:13px 18px; color:#6B7684;">Programación</td><td style="padding:13px 18px;">3</td><td style="padding:13px 18px;">2 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">BDD-302</td><td style="padding:13px 18px; font-weight:500;">Base de Datos 2</td><td style="padding:13px 18px; color:#6B7684;">Programación</td><td style="padding:13px 18px;">3</td><td style="padding:13px 18px;">2 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">EST-210</td><td style="padding:13px 18px; font-weight:500;">Estadística</td><td style="padding:13px 18px; color:#6B7684;">Ciencias básicas</td><td style="padding:13px 18px;">3</td><td style="padding:13px 18px;">4 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">SIS-410</td><td style="padding:13px 18px; font-weight:500;">Sistemas Operativos</td><td style="padding:13px 18px; color:#6B7684;">Programación</td><td style="padding:13px 18px;">3</td><td style="padding:13px 18px;">1 carrera</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr style="border-bottom:1px solid #EEF1F4;"><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">HUM-100</td><td style="padding:13px 18px; font-weight:500;">Constitución y Democracia</td><td style="padding:13px 18px; color:#6B7684;">Sociohumanística</td><td style="padding:13px 18px;">2</td><td style="padding:13px 18px;">4 carreras</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+              <tr><td style="padding:13px 18px; font:500 14px IBM Plex Mono, monospace;">ARQ-520</td><td style="padding:13px 18px; font-weight:500;">Arquitectura de Software</td><td style="padding:13px 18px; color:#6B7684;">Programación</td><td style="padding:13px 18px;">4</td><td style="padding:13px 18px; color:#9AA3AE;">Sin asignar</td><td style="padding:13px 18px; text-align:right;"><a href="#" onClick="{{ openModal }}" style="font:500 14px Barlow;">Editar</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; background:rgba(11,33,64,.45); display:flex; align-items:center; justify-content:center;">
+        <div style="width:520px; background:#FFFFFF; border-radius:12px; padding:26px; display:flex; flex-direction:column; gap:18px; box-shadow:0 24px 60px rgba(11,33,64,.3);">
+          <h2 style="margin:0; font:700 20px Barlow; color:#0B2140;">Nueva materia</h2>
+          <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Nombre<input placeholder="Ej.: Arquitectura de Software" style="height:42px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; outline:none;" /></label>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Código<input placeholder="ARQ-520" style="height:42px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; outline:none;" /></label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Créditos<input value="4" style="height:42px; border:1px solid #D3D9E0; border-radius:8px; padding:0 12px; font:400 15px Barlow; color:#0B2140; outline:none;" /></label>
+            <label style="display:flex; flex-direction:column; gap:7px; font:600 13px Barlow; color:#3B4757;">Área<select style="height:42px; border:1px solid #D3D9E0; border-radius:8px; padding:0 10px; font:400 15px Barlow; color:#0B2140;"><option>Programación</option><option>Ciencias básicas</option><option>Sociohumanística</option></select></label>
+          </div>
+          <div style="background:#F5F7F9; border-radius:8px; padding:12px 14px; font:400 13.5px/1.5 Barlow; color:#6B7684;">Las materias son independientes de la carrera. Se asignan a un semestre desde <a href="#" onClick="{{ goMalla }}" style="font-weight:600;">Malla curricular</a>.</div>
+          <div style="display:flex; justify-content:flex-end; gap:9px;">
+            <button onClick="{{ closeModal }}" style="height:40px; padding:0 16px; border:1px solid #D3D9E0; background:#FFFFFF; border-radius:8px; font:600 14px Barlow; color:#3B4757; cursor:pointer;">Cancelar</button>
+            <button onClick="{{ closeModal }}" style="height:40px; padding:0 18px; border:none; background:#0B2140; color:#FFFFFF; border-radius:8px; font:600 14px Barlow; cursor:pointer;">Crear materia</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { modal: false };
+  renderVals() { return {
+  goLogin: () => { location.href = './1 Login.dc.html'; },
+  goRegistro: () => { location.href = './2 Registro.dc.html'; },
+  goChat: () => { location.href = './3 Chat.dc.html'; },
+  goCarreras: () => { location.href = './4 Carreras.dc.html'; },
+  goMaterias: () => { location.href = './5 Materias.dc.html'; },
+  goMalla: () => { location.href = './6 Malla.dc.html'; },
+      modalOpen: this.state.modal,
+      openModal: () => this.setState({ modal: true }),
+      closeModal: () => this.setState({ modal: false })
+    }; }
+}
+</script>
+</body>
+</html>
