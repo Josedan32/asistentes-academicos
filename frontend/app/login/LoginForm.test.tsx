@@ -1,10 +1,20 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./LoginForm";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
+function renderLoginForm() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <LoginForm />
+    </QueryClientProvider>
+  );
+}
 
 describe("LoginForm", () => {
   beforeEach(() => {
@@ -25,7 +35,7 @@ describe("LoginForm", () => {
       )
     );
     const user = userEvent.setup();
-    render(<LoginForm />);
+    renderLoginForm();
 
     await user.type(screen.getByLabelText(/correo institucional/i), "ana@pascualbravo.edu.co");
     await user.type(screen.getByLabelText(/contraseña/i), "a-strong-password");
@@ -42,7 +52,7 @@ describe("LoginForm", () => {
       )
     );
     const user = userEvent.setup();
-    render(<LoginForm />);
+    renderLoginForm();
 
     await user.type(screen.getByLabelText(/correo institucional/i), "coord@pascualbravo.edu.co");
     await user.type(screen.getByLabelText(/contraseña/i), "a-strong-password");
@@ -56,7 +66,7 @@ describe("LoginForm", () => {
       new Response(JSON.stringify({ detail: "Invalid credentials" }), { status: 401 })
     );
     const user = userEvent.setup();
-    render(<LoginForm />);
+    renderLoginForm();
 
     await user.type(screen.getByLabelText(/correo institucional/i), "ana@pascualbravo.edu.co");
     await user.type(screen.getByLabelText(/contraseña/i), "wrong-password");
