@@ -8,8 +8,6 @@ const message = { id: 42, role: "assistant" as const, content: "respuesta", tool
 describe("FeedbackControls", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
-    // jsdom 25 defines `navigator.clipboard` as a getter-only accessor, so a plain
-    // Object.assign throws; redefine the property instead.
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
       configurable: true,
@@ -24,7 +22,7 @@ describe("FeedbackControls", () => {
     const user = userEvent.setup();
     render(<FeedbackControls message={message} onFeedbackSubmitted={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: "👍" }));
+    await user.click(screen.getByRole("button", { name: "Valorar positivamente" }));
 
     expect(screen.getByPlaceholderText(/no mencionó/i)).toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalled();
@@ -38,7 +36,7 @@ describe("FeedbackControls", () => {
     const user = userEvent.setup();
     render(<FeedbackControls message={message} onFeedbackSubmitted={onFeedbackSubmitted} />);
 
-    await user.click(screen.getByRole("button", { name: "👎" }));
+    await user.click(screen.getByRole("button", { name: "Valorar negativamente" }));
     await user.click(screen.getByRole("button", { name: /omitir/i }));
 
     await waitFor(() => expect(onFeedbackSubmitted).toHaveBeenCalledWith(42, {
@@ -56,7 +54,7 @@ describe("FeedbackControls", () => {
     const user = userEvent.setup();
     render(<FeedbackControls message={message} onFeedbackSubmitted={onFeedbackSubmitted} />);
 
-    await user.click(screen.getByRole("button", { name: "👍" }));
+    await user.click(screen.getByRole("button", { name: "Valorar positivamente" }));
     await user.type(screen.getByPlaceholderText(/no mencionó/i), "faltó horario");
     await user.click(screen.getByRole("button", { name: /enviar comentario/i }));
 
@@ -72,7 +70,7 @@ describe("FeedbackControls", () => {
         onFeedbackSubmitted={() => {}}
       />
     );
-    expect(screen.queryByRole("button", { name: "👍" })).not.toBeInTheDocument();
-    expect(screen.getByText("👍")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Valorar positivamente" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Valoración positiva")).toBeInTheDocument();
   });
 });

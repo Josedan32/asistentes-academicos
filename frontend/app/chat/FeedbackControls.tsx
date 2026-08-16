@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { submitFeedback } from "@/lib/api/feedback";
 import type { ChatFeedback, ChatMessage } from "@/lib/hooks/useChatStream";
 
@@ -34,9 +35,15 @@ export function FeedbackControls({
   if (message.feedback) {
     return (
       <>
-        <span className="flex h-8 w-8 items-center justify-center rounded-[7px] border
-                          border-border text-[14px]">
-          {message.feedback.value === "up" ? "👍" : "👎"}
+        <span
+          aria-label={message.feedback.value === "up" ? "Valoración positiva" : "Valoración negativa"}
+          className="flex h-8 w-8 items-center justify-center rounded-[7px] border border-border"
+        >
+          {message.feedback.value === "up" ? (
+            <ThumbsUp className="h-4 w-4" />
+          ) : (
+            <ThumbsDown className="h-4 w-4" />
+          )}
         </span>
         <CopyButton content={message.content} />
       </>
@@ -62,6 +69,7 @@ export function FeedbackControls({
       <div className="flex items-center gap-2">
         <button
           onClick={() => setPendingValue("up")}
+          aria-label="Valorar positivamente"
           className={
             pendingValue === "up"
               ? "flex h-8 w-8 items-center justify-center rounded-[7px] border border-accent " +
@@ -70,10 +78,11 @@ export function FeedbackControls({
                 "text-[14px] hover:border-accent"
           }
         >
-          👍
+          <ThumbsUp className="h-4 w-4" />
         </button>
         <button
           onClick={() => setPendingValue("down")}
+          aria-label="Valorar negativamente"
           className={
             pendingValue === "down"
               ? "flex h-8 w-8 items-center justify-center rounded-[7px] border " +
@@ -82,7 +91,7 @@ export function FeedbackControls({
                 "text-[14px] hover:border-error-accent"
           }
         >
-          👎
+          <ThumbsDown className="h-4 w-4" />
         </button>
         <CopyButton content={message.content} />
       </div>
